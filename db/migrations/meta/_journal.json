@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1766961321938,
+      "tag": "0000_parallel_invisible_woman",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766963335461,
+      "tag": "0001_amused_molly_hayes",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1766964737717,
+      "tag": "0002_adorable_winter_soldier",
+      "breakpoints": true
+    }
+  ]
+}

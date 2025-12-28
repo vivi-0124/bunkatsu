@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Header } from "@/components/header";
 
 export default function Home() {
   const [message, setMessage] = useState();
@@ -15,5 +16,10 @@ export default function Home() {
 
   if (!message) return <p>Loading...</p>;
 
-  return <p>{message}</p>;
+  return (
+    <>
+      <Header />
+      <p>{message}</p>
+    </>
+  );
 }
