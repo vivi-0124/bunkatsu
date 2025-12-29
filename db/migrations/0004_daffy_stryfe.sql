@@ -1,0 +1,1 @@
+ALTER TABLE `terms` ADD `total_lessons` integer DEFAULT 18 NOT NULL;

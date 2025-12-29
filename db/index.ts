@@ -2,6 +2,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/libsql";
 
 import * as authSchema from "./schemas/auth-schema";
+import * as book from "./schemas/book";
 import * as dashboardSchema from "./schemas/dashboard-schema";
 
 const url = process.env.TURSO_DATABASE_URL;
@@ -16,5 +17,5 @@ export const db = drizzle({
     url,
     authToken,
   },
-  schema: { ...authSchema, ...dashboardSchema },
+  schema: { ...authSchema, ...dashboardSchema, ...book },
 });
