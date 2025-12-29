@@ -1,14 +1,12 @@
 "use client";
 
 import {
-  BarChart3,
   BookOpen,
   Calendar,
   Clock,
   GraduationCap,
   History,
   MapPin,
-  Settings2,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -59,16 +57,6 @@ const adminNav = [
     url: "/dashboard/admin/lesson-slots",
     icon: Clock,
   },
-  {
-    title: "統計",
-    url: "/dashboard/admin/stats",
-    icon: BarChart3,
-  },
-  {
-    title: "設定",
-    url: "/dashboard/admin/settings",
-    icon: Settings2,
-  },
 ];
 
 const studentNav = [
@@ -82,11 +70,6 @@ const studentNav = [
     url: "/dashboard/student/history",
     icon: History,
   },
-  {
-    title: "設定",
-    url: "/dashboard/student/settings",
-    icon: Settings2,
-  },
 ];
 
 const tutorNav = [
@@ -99,11 +82,6 @@ const tutorNav = [
     title: "生徒一覧",
     url: "/dashboard/tutor/students",
     icon: Users,
-  },
-  {
-    title: "設定",
-    url: "/dashboard/tutor/settings",
-    icon: Settings2,
   },
 ];
 
