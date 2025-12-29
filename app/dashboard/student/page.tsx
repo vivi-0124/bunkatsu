@@ -78,7 +78,8 @@ const initialFormData: FormData = {
 };
 
 export default function StudentDashboard() {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isSessionLoading } =
+    authClient.useSession();
   const [students, setStudents] = useState<Student[] | undefined>(undefined);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
 
@@ -88,8 +89,14 @@ export default function StudentDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = useCallback(async () => {
+    if (!session?.user?.id) return;
+
     const [studentsRes, areasRes] = await Promise.all([
-      client.api.students.$get(),
+      client.api.students.$get({
+        query: {
+          parentId: session.user.id,
+        },
+      }),
       client.api.areas.$get(),
     ]);
 
@@ -101,11 +108,13 @@ export default function StudentDashboard() {
       const data = await areasRes.json();
       setAreas(data as Area[]);
     }
-  }, []);
+  }, [session?.user?.id]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (session?.user?.id) {
+      fetchData();
+    }
+  }, [fetchData, session?.user?.id]);
 
   const handleOpenDialog = (student?: Student) => {
     if (student) {
@@ -180,7 +189,8 @@ export default function StudentDashboard() {
     }
   };
 
-  const isLoading = students === undefined || areas === undefined;
+  const isLoading =
+    students === undefined || areas === undefined || isSessionLoading;
 
   const getCourseTypeLabel = (type?: string) => {
     switch (type) {

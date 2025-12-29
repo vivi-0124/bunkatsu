@@ -52,23 +52,37 @@ const routes = app
       return c.json({ success: true });
     },
   )
-  .get("/students", async (c) => {
-    const data = await db
-      .select({
-        id: students.id,
-        name: students.name,
-        school: students.school,
-        grade: students.grade,
-        areaId: students.areaId,
-        areaName: areas.name,
-        courseType: students.courseType,
-        birthDate: students.birthDate,
-        parentId: students.parentId,
-      })
-      .from(students)
-      .leftJoin(areas, eq(students.areaId, areas.id));
-    return c.json(data);
-  })
+  .get(
+    "/students",
+    zValidator(
+      "query",
+      z.object({
+        parentId: z.string().optional(),
+      }),
+    ),
+    async (c) => {
+      const { parentId } = c.req.valid("query");
+      const baseQuery = db
+        .select({
+          id: students.id,
+          name: students.name,
+          school: students.school,
+          grade: students.grade,
+          areaId: students.areaId,
+          areaName: areas.name,
+          courseType: students.courseType,
+          birthDate: students.birthDate,
+          parentId: students.parentId,
+        })
+        .from(students)
+        .leftJoin(areas, eq(students.areaId, areas.id));
+
+      const data = await (parentId
+        ? baseQuery.where(eq(students.parentId, parentId))
+        : baseQuery);
+      return c.json(data);
+    },
+  )
   .post(
     "/students",
     zValidator(

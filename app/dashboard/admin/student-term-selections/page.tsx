@@ -92,7 +92,9 @@ export default function SelectionsPage() {
     const [selectionsRes, studentsRes, termsRes, coursesRes] =
       await Promise.all([
         client.api["student-term-selections"].$get(),
-        client.api.students.$get(),
+        client.api.students.$get({
+          query: {},
+        }),
         client.api.terms.$get(),
         client.api.courses.$get(),
       ]);
