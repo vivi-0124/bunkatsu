@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "Sentry": {
+      "url": "https://mcp.sentry.dev/mcp/vivi-0124/javascript-nextjs",
+      "type": "http"
+    }
+  }
+}

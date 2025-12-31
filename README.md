@@ -1,5 +1,19 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Tech Stack
+
+このプロジェクトでは以下の技術スタックを使用しています。
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router), [Hono](https://hono.dev/)
+- **Frontend**: [React](https://react.dev/), [Tailwind CSS v4](https://tailwindcss.com/)
+- **UI Components**: [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/), [TanStack Table](https://tanstack.com/table), [Recharts](https://recharts.org/)
+- **Database/ORM**: [Drizzle ORM](https://orm.drizzle.team/), [LibSQL](https://github.com/tursodatabase/libsql) (SQLite)
+- **Authentication**: [Better Auth](https://www.better-auth.com/)
+- **Forms**: [React Hook Form](https://react-hook-form.com/), [Zod](https://zod.dev/)
+- **Drag & Drop**: [@dnd-kit](https://dndkit.com/)
+- **Tooling**: [Biome](https://biomejs.dev/), [TypeScript](https://www.typescriptlang.org/)
+
+
 ## Getting Started
 
 First, run the development server:
