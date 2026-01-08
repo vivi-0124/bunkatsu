@@ -63,14 +63,14 @@ export const installmentsRoutes = new Hono()
       await db
         .update(installments)
         .set({ ...values, updatedAt: new Date().toISOString() })
-        .where(eq(installments.id, Number(id)));
+        .where(eq(installments.id, id));
       return c.json({ success: true });
     },
   )
   // DELETE /installments/:id - Delete an installment
   .delete("/installments/:id", async (c) => {
     const { id } = c.req.param();
-    await db.delete(installments).where(eq(installments.id, Number(id)));
+    await db.delete(installments).where(eq(installments.id, id));
     return c.json({ success: true });
   })
   // GET /installments/export - Export installments as CSV
@@ -136,9 +136,10 @@ export const installmentsRoutes = new Hono()
       // 新規追加の例（idは空欄）
       ',"サンプル商品（新規）",12,2026-01,10000,120000',
       // 更新の例（idを指定）
-      '1,"サンプル商品（更新）",12,2026-01,10000,120000',
+      'some-uuid-string,"サンプル商品（更新）",12,2026-01,10000,120000',
     ];
-    const comment = "# 注意: 新規追加の場合はidを空欄にしてください。";
+    const comment =
+      "# 注意: 新規追加の場合はidを空欄にしてください。更新の場合はUUIDを指定してください。";
     const csvContent = `${comment}\n${headers.join(",")}\n${sampleRows.join("\n")}\n`;
     return new Response(csvContent, {
       headers: {
@@ -225,7 +226,7 @@ export const installmentsRoutes = new Hono()
           amountPerPaymentStr,
           totalAmountStr,
         ] = values;
-        const id = idStr ? Number.parseInt(idStr, 10) : null;
+        const id = idStr ? idStr.trim() : null;
         const totalPayments = Number.parseInt(totalPaymentsStr, 10);
         const amountPerPayment = Number.parseInt(amountPerPaymentStr, 10);
         const totalAmount = Number.parseInt(totalAmountStr, 10);
@@ -242,7 +243,7 @@ export const installmentsRoutes = new Hono()
         }
 
         try {
-          if (id && !Number.isNaN(id)) {
+          if (id) {
             // Update existing record
             await db
               .update(installments)

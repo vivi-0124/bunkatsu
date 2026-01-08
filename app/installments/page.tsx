@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 
 interface InstallmentRaw {
-  id: number;
+  id: string;
   userId: string;
   name: string;
   totalPayments: number;
@@ -75,7 +75,7 @@ export default function InstallmentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -174,7 +174,7 @@ export default function InstallmentsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("この分割払いを削除しますか？")) return;
     try {
       await fetch(`/api/installments/${id}`, { method: "DELETE" });
@@ -486,7 +486,7 @@ export default function InstallmentsPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold text-lg">{item.name}</h3>
                       <span className="text-xs text-muted-foreground">
-                        #{item.id}
+                        #{item.id.slice(0, 8)}...
                       </span>
                       {item.isCompleted && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
