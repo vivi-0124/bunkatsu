@@ -661,7 +661,7 @@ export default function InstallmentsPage() {
                           totalAmount: e.target.value,
                         })
                       }
-                      placeholder="例: 12000（任意）"
+                      placeholder="例: 12000(任意)"
                     />
                   </div>
                 </div>
