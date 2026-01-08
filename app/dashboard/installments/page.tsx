@@ -82,6 +82,29 @@ interface InstallmentRaw {
   updatedAt: string;
 }
 
+// APIレスポンスの型（intMode: "string" により整数フィールドが文字列で返される）
+interface InstallmentApiResponse {
+  id: string;
+  userId: string;
+  name: string;
+  totalPayments: number | string;
+  startDate: string;
+  amountPerPayment: number | string;
+  totalAmount: number | string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// APIレスポンスをInstallmentRaw型に正規化
+function normalizeInstallment(item: InstallmentApiResponse): InstallmentRaw {
+  return {
+    ...item,
+    totalPayments: Number(item.totalPayments),
+    amountPerPayment: Number(item.amountPerPayment),
+    totalAmount: item.totalAmount !== null ? Number(item.totalAmount) : null,
+  };
+}
+
 interface InstallmentWithCalculated extends InstallmentRaw {
   currentPayment: number;
   isCompleted: boolean;
@@ -308,8 +331,9 @@ export default function InstallmentsPage() {
       const res = await fetch(
         `/api/dashboard/installments?userId=${session.user.id}`,
       );
-      const data = await res.json();
-      setInstallmentsRaw(data);
+      const data: InstallmentApiResponse[] = await res.json();
+      // intMode: "string" により整数値が文字列で返されるため正規化
+      setInstallmentsRaw(data.map(normalizeInstallment));
     } catch (error) {
       console.error("Failed to fetch installments:", error);
     } finally {

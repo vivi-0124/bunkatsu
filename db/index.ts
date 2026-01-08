@@ -14,13 +14,12 @@ if (!url) {
   throw new Error("TURSO_DATABASE_URL is not set");
 }
 
-// intMode: "number" を設定することで、大きな整数値を安全に扱えるようにする
-// ただし、Number.MAX_SAFE_INTEGERを超える値がある場合はエラーになる
-// もしBigIntを使用したい場合は "bigint" に変更し、フロントエンドでBigIntを処理する必要がある
+// intMode: "string" を設定することで、整数値を文字列として安全に扱えるようにする
+// これにより Number.MAX_SAFE_INTEGER を超える値もエラーなく処理可能
 const client = createClient({
   url,
   authToken,
-  intMode: "number",
+  intMode: "string",
 });
 
 export const db = drizzle(client, {
