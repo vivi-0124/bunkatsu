@@ -18,7 +18,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,6 +73,7 @@ interface InstallmentRaw {
 interface InstallmentWithCalculated extends InstallmentRaw {
   currentPayment: number;
   isCompleted: boolean;
+  endDate: string; // 完済予定月 (YYYY-MM形式)
 }
 
 // 現在の月から支払い回数を計算
@@ -91,6 +92,16 @@ function calculateCurrentPayment(
     1;
 
   return Math.min(Math.max(monthsDiff, 1), totalPayments);
+}
+
+// 完済予定月を計算 (開始月 + 分割回数 - 1 ヶ月)
+function calculateEndDate(startDate: string, totalPayments: number): string {
+  const [year, month] = startDate.split("-").map(Number);
+  const start = new Date(year, month - 1, 1);
+  start.setMonth(start.getMonth() + totalPayments - 1);
+  const endYear = start.getFullYear();
+  const endMonth = String(start.getMonth() + 1).padStart(2, "0");
+  return `${endYear}-${endMonth}`;
 }
 
 // 現在の月をYYYY-MM形式で取得
@@ -122,12 +133,33 @@ export default function InstallmentsPage() {
     | "totalAmount"
     | "remaining"
     | "startDate"
+    | "endDate"
   >("startDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "completed"
   >("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputMobileRef = useRef<HTMLInputElement>(null);
+
+  // Command+K keyboard shortcut to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        // Check screen width to determine which input to focus
+        if (window.innerWidth >= 768) {
+          searchInputRef.current?.focus();
+        } else {
+          searchInputMobileRef.current?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -145,10 +177,12 @@ export default function InstallmentsPage() {
         item.startDate,
         item.totalPayments,
       );
+      const endDate = calculateEndDate(item.startDate, item.totalPayments);
       return {
         ...item,
         currentPayment,
         isCompleted: currentPayment >= item.totalPayments,
+        endDate,
       };
     });
 
@@ -203,6 +237,9 @@ export default function InstallmentsPage() {
         }
         case "startDate":
           comparison = a.startDate.localeCompare(b.startDate);
+          break;
+        case "endDate":
+          comparison = a.endDate.localeCompare(b.endDate);
           break;
       }
 
@@ -714,7 +751,8 @@ export default function InstallmentsPage() {
           <div className="relative flex-1 min-w-0">
             <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="検索..."
+              ref={searchInputMobileRef}
+              placeholder="検索... (⌘K)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 pr-7 h-8 text-xs"
@@ -802,6 +840,12 @@ export default function InstallmentsPage() {
               <SelectItem value="progress-asc" className="text-xs">
                 進捗（低い順）
               </SelectItem>
+              <SelectItem value="endDate-asc" className="text-xs">
+                完済予定（早い順）
+              </SelectItem>
+              <SelectItem value="endDate-desc" className="text-xs">
+                完済予定（遅い順）
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -878,7 +922,7 @@ export default function InstallmentsPage() {
                       {item.currentPayment} / {item.totalPayments} 回
                     </span>
                     <span className="text-muted-foreground">
-                      開始: {item.startDate}
+                      {item.startDate} → {item.endDate}
                     </span>
                   </div>
                   <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -923,7 +967,8 @@ export default function InstallmentsPage() {
         <div className="relative flex-1 min-w-[200px] max-w-[300px]">
           <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="項目名で検索..."
+            ref={searchInputRef}
+            placeholder="項目名で検索... (⌘K)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-9 h-9"
@@ -1031,13 +1076,22 @@ export default function InstallmentsPage() {
                   <SortIcon column="startDate" />
                 </div>
               </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("endDate")}
+              >
+                <div className="flex items-center gap-1">
+                  完済予定
+                  <SortIcon column="endDate" />
+                </div>
+              </TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {installments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
                     <IconCreditCard className="h-8 w-8 mb-2 opacity-50" />
                     <p>分割払いがありません。</p>
@@ -1115,6 +1169,9 @@ export default function InstallmentsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">
                     {item.startDate}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {item.endDate}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
