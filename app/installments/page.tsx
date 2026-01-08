@@ -893,8 +893,8 @@ export default function InstallmentsPage() {
         )}
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      {/* Filter & Search Bar (Desktop) */}
+      <div className="hidden md:flex flex-wrap items-center gap-3 mb-4">
         {/* Search Input */}
         <div className="relative flex-1 min-w-[200px] max-w-[300px]">
           <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
