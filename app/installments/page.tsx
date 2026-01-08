@@ -563,7 +563,7 @@ export default function InstallmentsPage() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-[1fr_1.5fr] gap-4">
+                <div className="grid grid-cols-[3fr_7fr] gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="totalPayments">分割回数</Label>
                     <Input
@@ -592,7 +592,7 @@ export default function InstallmentsPage() {
                           })
                         }
                       >
-                        <SelectTrigger className="flex-1 md:flex-1">
+                        <SelectTrigger className="flex-1">
                           <SelectValue placeholder="年" />
                         </SelectTrigger>
                         <SelectContent>
@@ -615,7 +615,7 @@ export default function InstallmentsPage() {
                           })
                         }
                       >
-                        <SelectTrigger className="w-16 shrink-0 md:flex-1 md:w-auto md:shrink">
+                        <SelectTrigger className="flex-1">
                           <SelectValue placeholder="月" />
                         </SelectTrigger>
                         <SelectContent>
