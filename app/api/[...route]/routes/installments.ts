@@ -131,15 +131,12 @@ export const installmentsRoutes = new Hono()
       "amountPerPayment",
       "totalAmount",
     ];
-    // サンプル行（説明付き）
+    // サンプル行
     const sampleRows = [
       // 新規追加の例（idは空欄）
-      ',"サンプル商品（新規）",12,2026-01,10000,120000',
-      // 更新の例（idを指定）
-      'some-uuid-string,"サンプル商品（更新）",12,2026-01,10000,120000',
+      ',"サンプル商品（新規）",12,2026-01,1000,12000',
     ];
-    const comment =
-      "# 注意: 新規追加の場合はidを空欄にしてください。更新の場合はUUIDを指定してください。";
+    const comment = "# 注意: 新規追加の場合はidを空欄にしてください。";
     const csvContent = `${comment}\n${headers.join(",")}\n${sampleRows.join("\n")}\n`;
     return new Response(csvContent, {
       headers: {

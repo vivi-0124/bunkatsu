@@ -25,7 +25,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-linear-to-r from-indigo-600/95 via-purple-600/95 to-indigo-600/95 backdrop-blur-xl shadow-lg shadow-indigo-500/20">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 max-w-screen-xl items-center justify-between px-4">
         {/* Logo & Brand */}
         <div className="flex items-center gap-3">
           <Link href="/installments" className="flex items-center gap-3 group">
@@ -49,14 +49,12 @@ export function AppHeader() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-3 py-2 text-white hover:bg-white/10 hover:text-white"
+                  size="icon"
+                  className="text-white hover:bg-white/10 hover:text-white"
                 >
                   <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
                     <IconUser className="h-4 w-4" />
                   </div>
-                  <span className="hidden sm:inline font-medium">
-                    {session.user.name}
-                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

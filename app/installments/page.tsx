@@ -40,6 +40,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -128,6 +134,7 @@ export default function InstallmentsPage() {
   // Sort & Filter state
   const [sortKey, setSortKey] = useState<
     | "name"
+    | "status"
     | "progress"
     | "amountPerPayment"
     | "totalAmount"
@@ -213,6 +220,13 @@ export default function InstallmentsPage() {
         case "name":
           comparison = a.name.localeCompare(b.name, "ja");
           break;
+        case "status": {
+          // 支払い中 (false=0) を先に、完済 (true=1) を後に
+          const statusA = a.isCompleted ? 1 : 0;
+          const statusB = b.isCompleted ? 1 : 0;
+          comparison = statusA - statusB;
+          break;
+        }
         case "progress": {
           const progressA = a.currentPayment / a.totalPayments;
           const progressB = b.currentPayment / b.totalPayments;
@@ -477,7 +491,7 @@ export default function InstallmentsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-screen-xl">
       {/* Monthly Summary Card */}
       {/* Header Actions & Summary */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
@@ -748,26 +762,34 @@ export default function InstallmentsPage() {
         {/* Search, Filter & Sort Row */}
         <div className="flex items-center gap-1.5">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-0">
-            <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
+          <InputGroup className="flex-1 min-w-0 h-8">
+            <InputGroupAddon>
+              <IconSearch className="h-3.5 w-3.5" />
+            </InputGroupAddon>
+            <InputGroupInput
               ref={searchInputMobileRef}
-              placeholder="検索... (⌘K)"
+              placeholder="検索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-7 h-8 text-xs"
+              className="h-8 text-xs"
             />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                onClick={() => setSearchQuery("")}
-              >
-                <IconX className="h-3 w-3" />
-              </Button>
+            {searchQuery ? (
+              <InputGroupAddon align="inline-end">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <IconX className="h-3 w-3" />
+                </Button>
+              </InputGroupAddon>
+            ) : (
+              <InputGroupAddon align="inline-end">
+                <Kbd>⌘K</Kbd>
+              </InputGroupAddon>
             )}
-          </div>
+          </InputGroup>
 
           {/* Status Filter */}
           <Select
@@ -846,6 +868,12 @@ export default function InstallmentsPage() {
               <SelectItem value="endDate-desc" className="text-xs">
                 完済予定（遅い順）
               </SelectItem>
+              <SelectItem value="status-asc" className="text-xs">
+                ステータス（支払い中→完済）
+              </SelectItem>
+              <SelectItem value="status-desc" className="text-xs">
+                ステータス（完済→支払い中）
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -880,8 +908,10 @@ export default function InstallmentsPage() {
             >
               <CardContent className="p-3 py-0">
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <span className="font-medium">{item.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium block truncate">
+                      {item.name}
+                    </span>
                     <p className="text-[10px] text-muted-foreground font-mono">
                       #{item.id}
                     </p>
@@ -964,26 +994,35 @@ export default function InstallmentsPage() {
       {/* Filter & Search Bar (Desktop) */}
       <div className="hidden md:flex flex-wrap items-center gap-3 mb-4">
         {/* Search Input */}
-        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+        <InputGroup className="flex-1 min-w-[200px] max-w-[300px] h-9">
+          <InputGroupAddon>
+            <IconSearch className="h-4 w-4" />
+          </InputGroupAddon>
+          <InputGroupInput
             ref={searchInputRef}
-            placeholder="項目名で検索... (⌘K)"
+            placeholder="項目名で検索..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9 h-9"
+            className="h-9"
           />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-              onClick={() => setSearchQuery("")}
-            >
-              <IconX className="h-3 w-3" />
-            </Button>
+          {searchQuery ? (
+            <InputGroupAddon align="inline-end">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setSearchQuery("")}
+              >
+                <IconX className="h-3 w-3" />
+              </Button>
+            </InputGroupAddon>
+          ) : (
+            <InputGroupAddon align="inline-end">
+              <Kbd>⌘</Kbd>
+              <Kbd>K</Kbd>
+            </InputGroupAddon>
           )}
-        </div>
+        </InputGroup>
 
         {/* Status Filter */}
         <div className="flex items-center gap-2">
@@ -1030,7 +1069,15 @@ export default function InstallmentsPage() {
                   <SortIcon column="name" />
                 </div>
               </TableHead>
-              <TableHead>ステータス</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("status")}
+              >
+                <div className="flex items-center gap-1">
+                  ステータス
+                  <SortIcon column="status" />
+                </div>
+              </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50 select-none"
                 onClick={() => handleSort("progress")}
@@ -1107,12 +1154,12 @@ export default function InstallmentsPage() {
                   key={item.id}
                   className={item.isCompleted ? "opacity-60 bg-muted/50" : ""}
                 >
-                  <TableCell className="font-medium">
-                    <div>
+                  <TableCell className="font-medium max-w-[200px]">
+                    <div className="truncate" title={item.name}>
                       {item.name}
-                      <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">
-                        #{item.id}
-                      </div>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground font-mono truncate">
+                      #{item.id}
                     </div>
                   </TableCell>
                   <TableCell>

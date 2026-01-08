@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 
 import * as authSchema from "./schemas/auth-schema";
@@ -13,10 +14,16 @@ if (!url) {
   throw new Error("TURSO_DATABASE_URL is not set");
 }
 
-export const db = drizzle({
-  connection: {
-    url,
-    authToken,
-  },
+// intMode: "number" を設定することで、大きな整数値を安全に扱えるようにする
+// ただし、Number.MAX_SAFE_INTEGERを超える値がある場合はエラーになる
+// もしBigIntを使用したい場合は "bigint" に変更し、フロントエンドでBigIntを処理する必要がある
+const client = createClient({
+  url,
+  authToken,
+  intMode: "number",
+});
+
+export const db = drizzle(client, {
   schema: { ...authSchema, ...dashboardSchema, ...book, ...installmentSchema },
+  casing: "snake_case",
 });
