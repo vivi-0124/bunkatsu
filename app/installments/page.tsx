@@ -230,7 +230,10 @@ export default function InstallmentsPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(`${result.inserted}件のデータをインポートしました。`);
+        const messages = [];
+        if (result.inserted > 0) messages.push(`${result.inserted}件追加`);
+        if (result.updated > 0) messages.push(`${result.updated}件更新`);
+        alert(messages.join("、") || "処理が完了しました");
         setIsImportDialogOpen(false);
         setImportFile(null);
         fetchInstallments();
