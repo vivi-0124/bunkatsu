@@ -1,20 +1,27 @@
 "use client";
 
 import {
+  IconArrowDown,
+  IconArrowsSort,
+  IconArrowUp,
   IconCheck,
   IconCreditCard,
   IconDots,
   IconDownload,
   IconEdit,
   IconFileTypeCsv,
+  IconFilter,
   IconPlus,
+  IconSearch,
   IconTrash,
   IconUpload,
+  IconX,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 import {
   Dialog,
@@ -107,6 +114,21 @@ export default function InstallmentsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
+  // Sort & Filter state
+  const [sortKey, setSortKey] = useState<
+    | "name"
+    | "progress"
+    | "amountPerPayment"
+    | "totalAmount"
+    | "remaining"
+    | "startDate"
+  >("startDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "completed"
+  >("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -117,8 +139,8 @@ export default function InstallmentsPage() {
   });
 
   // 計算済みのインストールメント
-  const installments: InstallmentWithCalculated[] = installmentsRaw.map(
-    (item) => {
+  const installmentsCalculated: InstallmentWithCalculated[] =
+    installmentsRaw.map((item) => {
       const currentPayment = calculateCurrentPayment(
         item.startDate,
         item.totalPayments,
@@ -128,11 +150,100 @@ export default function InstallmentsPage() {
         currentPayment,
         isCompleted: currentPayment >= item.totalPayments,
       };
-    },
-  );
+    });
 
-  // 支払いが完了していないものだけでサマリー計算
-  const activeInstallments = installments.filter((item) => !item.isCompleted);
+  // フィルタリング＆ソート済みのインストールメント
+  const installments = useMemo(() => {
+    let filtered = [...installmentsCalculated];
+
+    // ステータスフィルター
+    if (statusFilter === "active") {
+      filtered = filtered.filter((item) => !item.isCompleted);
+    } else if (statusFilter === "completed") {
+      filtered = filtered.filter((item) => item.isCompleted);
+    }
+
+    // 名前検索
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((item) =>
+        item.name.toLowerCase().includes(query),
+      );
+    }
+
+    // ソート
+    filtered.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortKey) {
+        case "name":
+          comparison = a.name.localeCompare(b.name, "ja");
+          break;
+        case "progress": {
+          const progressA = a.currentPayment / a.totalPayments;
+          const progressB = b.currentPayment / b.totalPayments;
+          comparison = progressA - progressB;
+          break;
+        }
+        case "amountPerPayment":
+          comparison = a.amountPerPayment - b.amountPerPayment;
+          break;
+        case "totalAmount":
+          comparison = (a.totalAmount ?? 0) - (b.totalAmount ?? 0);
+          break;
+        case "remaining": {
+          const remainingA = a.isCompleted
+            ? 0
+            : a.amountPerPayment * (a.totalPayments - a.currentPayment + 1);
+          const remainingB = b.isCompleted
+            ? 0
+            : b.amountPerPayment * (b.totalPayments - b.currentPayment + 1);
+          comparison = remainingA - remainingB;
+          break;
+        }
+        case "startDate":
+          comparison = a.startDate.localeCompare(b.startDate);
+          break;
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [
+    installmentsCalculated,
+    statusFilter,
+    searchQuery,
+    sortKey,
+    sortDirection,
+  ]);
+
+  // ソートの切り替え
+  const handleSort = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
+
+  // ソートアイコンの表示
+  const SortIcon = ({ column }: { column: typeof sortKey }) => {
+    if (sortKey !== column) {
+      return <IconArrowsSort className="h-3 w-3 opacity-30" />;
+    }
+    return sortDirection === "asc" ? (
+      <IconArrowUp className="h-3 w-3" />
+    ) : (
+      <IconArrowDown className="h-3 w-3" />
+    );
+  };
+
+  // 支払いが完了していないものだけでサマリー計算（フィルター前のデータを使用）
+  const activeInstallments = installmentsCalculated.filter(
+    (item) => !item.isCompleted,
+  );
 
   const fetchInstallments = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -594,17 +705,308 @@ export default function InstallmentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="rounded-md border">
+
+      {/* Mobile Filter & Sort Controls */}
+      <div className="md:hidden space-y-3 mb-4">
+        {/* Search Input */}
+        <div className="relative">
+          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="項目名で検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9 h-10"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => setSearchQuery("")}
+            >
+              <IconX className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {/* Filter & Sort Row */}
+        <div className="flex items-center gap-2">
+          {/* Status Filter */}
+          <Select
+            value={statusFilter}
+            onValueChange={(val: "all" | "active" | "completed") =>
+              setStatusFilter(val)
+            }
+          >
+            <SelectTrigger className="flex-1 h-9">
+              <IconFilter className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">すべて</SelectItem>
+              <SelectItem value="active">支払い中</SelectItem>
+              <SelectItem value="completed">完済</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Sort Select */}
+          <Select
+            value={`${sortKey}-${sortDirection}`}
+            onValueChange={(val) => {
+              const [key, dir] = val.split("-") as [
+                typeof sortKey,
+                "asc" | "desc",
+              ];
+              setSortKey(key);
+              setSortDirection(dir);
+            }}
+          >
+            <SelectTrigger className="flex-1 h-9">
+              <IconArrowsSort className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="startDate-desc">開始日（新しい順）</SelectItem>
+              <SelectItem value="startDate-asc">開始日（古い順）</SelectItem>
+              <SelectItem value="name-asc">項目名（A→Z）</SelectItem>
+              <SelectItem value="name-desc">項目名（Z→A）</SelectItem>
+              <SelectItem value="amountPerPayment-desc">
+                月額（高い順）
+              </SelectItem>
+              <SelectItem value="amountPerPayment-asc">
+                月額（低い順）
+              </SelectItem>
+              <SelectItem value="remaining-desc">残り（多い順）</SelectItem>
+              <SelectItem value="remaining-asc">残り（少ない順）</SelectItem>
+              <SelectItem value="progress-desc">進捗（高い順）</SelectItem>
+              <SelectItem value="progress-asc">進捗（低い順）</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Results Count */}
+        <div className="text-sm text-muted-foreground">
+          {installments.length}件表示
+          {(statusFilter !== "all" || searchQuery) && (
+            <span className="text-xs ml-1">
+              (全{installmentsCalculated.length}件中)
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {installments.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+              <IconCreditCard className="h-10 w-10 text-muted-foreground mb-3 opacity-50" />
+              <p className="text-muted-foreground text-sm">
+                分割払いがありません。
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          installments.map((item) => (
+            <Card
+              key={item.id}
+              className={item.isCompleted ? "opacity-60" : ""}
+            >
+              <CardContent className="p-3 py-0">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{item.name}</span>
+                      {item.isCompleted && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          <IconCheck className="h-2.5 w-2.5" />
+                          完済
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      #{item.id}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(item)}
+                      className="h-7 w-7"
+                    >
+                      <IconEdit className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(item.id)}
+                      className="h-7 w-7 text-red-500 hover:text-red-600"
+                    >
+                      <IconTrash className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                {/* Progress */}
+                <div className="mb-2">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-muted-foreground">
+                      {item.currentPayment} / {item.totalPayments} 回
+                    </span>
+                    <span className="text-muted-foreground">
+                      開始: {item.startDate}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        item.isCompleted
+                          ? "bg-green-500"
+                          : "bg-linear-to-r from-indigo-500 to-purple-600"
+                      }`}
+                      style={{
+                        width: `${Math.min((item.currentPayment / item.totalPayments) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* Stats */}
+                <div className="flex justify-between text-sm">
+                  <div>
+                    <span className="text-muted-foreground text-xs">月額</span>
+                    <p className="font-medium">
+                      ¥{item.amountPerPayment.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-muted-foreground text-xs">残り</span>
+                    <p className="font-medium text-indigo-600">
+                      {item.isCompleted
+                        ? "¥0"
+                        : `¥${(item.amountPerPayment * (item.totalPayments - item.currentPayment + 1)).toLocaleString()}`}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Filter & Search Bar */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        {/* Search Input */}
+        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="項目名で検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9 h-9"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+              onClick={() => setSearchQuery("")}
+            >
+              <IconX className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {/* Status Filter */}
+        <div className="flex items-center gap-2">
+          <IconFilter className="h-4 w-4 text-muted-foreground" />
+          <Select
+            value={statusFilter}
+            onValueChange={(val: "all" | "active" | "completed") =>
+              setStatusFilter(val)
+            }
+          >
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">すべて</SelectItem>
+              <SelectItem value="active">支払い中</SelectItem>
+              <SelectItem value="completed">完済</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Results Count */}
+        <div className="text-sm text-muted-foreground ml-auto">
+          {installments.length}件表示
+          {(statusFilter !== "all" || searchQuery) && (
+            <span className="text-xs ml-1">
+              (全{installmentsCalculated.length}件中)
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">項目名</TableHead>
+              <TableHead
+                className="w-[200px] cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("name")}
+              >
+                <div className="flex items-center gap-1">
+                  項目名
+                  <SortIcon column="name" />
+                </div>
+              </TableHead>
               <TableHead>ステータス</TableHead>
-              <TableHead>進捗</TableHead>
-              <TableHead>月額</TableHead>
-              <TableHead>総額</TableHead>
-              <TableHead>残り</TableHead>
-              <TableHead>開始</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("progress")}
+              >
+                <div className="flex items-center gap-1">
+                  進捗
+                  <SortIcon column="progress" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("amountPerPayment")}
+              >
+                <div className="flex items-center gap-1">
+                  月額
+                  <SortIcon column="amountPerPayment" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("totalAmount")}
+              >
+                <div className="flex items-center gap-1">
+                  総額
+                  <SortIcon column="totalAmount" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("remaining")}
+              >
+                <div className="flex items-center gap-1">
+                  残り
+                  <SortIcon column="remaining" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("startDate")}
+              >
+                <div className="flex items-center gap-1">
+                  開始
+                  <SortIcon column="startDate" />
+                </div>
+              </TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
