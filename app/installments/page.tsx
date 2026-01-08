@@ -12,17 +12,27 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
 
 interface InstallmentRaw {
@@ -74,6 +84,8 @@ export default function InstallmentsPage() {
   const [installmentsRaw, setInstallmentsRaw] = useState<InstallmentRaw[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -174,14 +186,35 @@ export default function InstallmentsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("この分割払いを削除しますか？")) return;
-    try {
-      await fetch(`/api/installments/${id}`, { method: "DELETE" });
-      fetchInstallments();
-    } catch (error) {
-      console.error("Failed to delete installment:", error);
-    }
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteTargetId) return;
+
+    // Create a promise for the delete operation
+    const deletePromise = async () => {
+      // 処理が速すぎて通知が一瞬で消えるように見えるため、意図的に少し待機時間を設ける（UX向上のため）
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      const res = await fetch(`/api/installments/${deleteTargetId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    };
+
+    toast.promise(deletePromise(), {
+      loading: "削除中...",
+      success: () => {
+        setIsDeleteDialogOpen(false);
+        setDeleteTargetId(null);
+        fetchInstallments();
+        return "削除しました";
+      },
+      error: "削除に失敗しました",
+    });
   };
 
   const resetForm = () => {
@@ -227,16 +260,31 @@ export default function InstallmentsPage() {
         const messages = [];
         if (result.inserted > 0) messages.push(`${result.inserted}件追加`);
         if (result.updated > 0) messages.push(`${result.updated}件更新`);
-        alert(messages.join("、") || "処理が完了しました");
+
+        toast.success("インポートが完了しました", {
+          description: messages.join("、") || "変更はありませんでした",
+        });
+
+        if (result.errors && result.errors.length > 0) {
+          toast.warning("一部の行でエラーが発生しました", {
+            description: `${result.errors.length}件のエラーがあります。詳細はコンソールを確認してください。`,
+          });
+          console.warn("Import errors:", result.errors);
+        }
+
         setIsImportDialogOpen(false);
         setImportFile(null);
         fetchInstallments();
       } else {
-        alert(`エラー: ${result.error}`);
+        toast.error("インポートエラー", {
+          description: result.error || "予期せぬエラーが発生しました",
+        });
       }
     } catch (error) {
       console.error("Failed to import:", error);
-      alert("インポートに失敗しました");
+      toast.error("インポートに失敗しました", {
+        description: "通信エラーが発生しました",
+      });
     } finally {
       setIsImporting(false);
     }
@@ -398,19 +446,55 @@ export default function InstallmentsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">開始月</Label>
-                  <Input
-                    id="startDate"
-                    type="month"
-                    value={formData.startDate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        startDate: e.target.value,
-                      })
-                    }
-                    required
-                  />
+                  <Label>開始月</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.startDate.split("-")[0]}
+                      onValueChange={(val) =>
+                        setFormData({
+                          ...formData,
+                          startDate: `${val}-${formData.startDate.split("-")[1]}`,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="年" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 41 }, (_, i) => {
+                          const year = new Date().getFullYear() - 30 + i;
+                          return (
+                            <SelectItem key={year} value={String(year)}>
+                              {year}年
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={formData.startDate.split("-")[1]}
+                      onValueChange={(val) =>
+                        setFormData({
+                          ...formData,
+                          startDate: `${formData.startDate.split("-")[0]}-${val}`,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="月" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const month = String(i + 1).padStart(2, "0");
+                          return (
+                            <SelectItem key={month} value={month}>
+                              {i + 1}月
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -443,7 +527,7 @@ export default function InstallmentsPage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-4">
+              <DialogFooter className="pt-4">
                 <Button type="button" variant="outline" onClick={resetForm}>
                   キャンセル
                 </Button>
@@ -453,8 +537,33 @@ export default function InstallmentsPage() {
                 >
                   {editingId ? "更新" : "追加"}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>削除の確認</DialogTitle>
+              <DialogDescription>
+                本当にこの分割払いを削除してもよろしいですか？
+                <br />
+                この操作は取り消せません。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                キャンセル
+              </Button>
+              <Button variant="destructive" onClick={executeDelete}>
+                削除する
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

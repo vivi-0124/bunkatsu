@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SentryTestMetric } from "@/components/sentry-test-metric";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
         >
           <SentryTestMetric />
           <main className="flex-1">{children}</main>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

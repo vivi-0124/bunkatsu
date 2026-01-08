@@ -261,20 +261,10 @@ export const installmentsRoutes = new Hono()
             if (updated) {
               insertedRows.push({ id, name, updated: true });
             } else {
-              // ID provided but not found -> Insert with this ID
-              const [inserted] = await db
-                .insert(installments)
-                .values({
-                  id,
-                  userId,
-                  name,
-                  totalPayments,
-                  startDate,
-                  amountPerPayment,
-                  totalAmount,
-                })
-                .returning();
-              insertedRows.push(inserted);
+              // ID provided but not found -> Error (do not insert)
+              errors.push(
+                `Row ${i + 1}: ID ${id} not found in database. Cannot update.`,
+              );
             }
           } else {
             // Insert new record
