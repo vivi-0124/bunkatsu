@@ -592,7 +592,7 @@ export default function InstallmentsPage() {
                           })
                         }
                       >
-                        <SelectTrigger className="flex-1">
+                        <SelectTrigger className="flex-1 md:flex-1">
                           <SelectValue placeholder="年" />
                         </SelectTrigger>
                         <SelectContent>
@@ -615,7 +615,7 @@ export default function InstallmentsPage() {
                           })
                         }
                       >
-                        <SelectTrigger className="w-[70px] shrink-0">
+                        <SelectTrigger className="w-16 shrink-0 md:flex-1 md:w-auto md:shrink">
                           <SelectValue placeholder="月" />
                         </SelectTrigger>
                         <SelectContent>
