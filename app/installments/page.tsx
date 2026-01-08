@@ -563,7 +563,7 @@ export default function InstallmentsPage() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-[1fr_1.5fr] gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="totalPayments">分割回数</Label>
                     <Input
