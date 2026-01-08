@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  BookOpen,
-  Calendar,
-  Clock,
-  CreditCard,
-  GraduationCap,
-  History,
-  MapPin,
-  UserCheck,
-  Users,
-} from "lucide-react";
+import { CreditCard, GraduationCap, Users } from "lucide-react";
 import type * as React from "react";
 import { NavSimple } from "@/components/nav-simple";
 import { NavUser } from "@/components/nav-user";
@@ -33,57 +23,6 @@ const adminNav = [
     url: "/dashboard/admin/users",
     icon: Users,
   },
-  {
-    title: "エリア管理",
-    url: "/dashboard/admin/areas",
-    icon: MapPin,
-  },
-  {
-    title: "コース管理",
-    url: "/dashboard/admin/courses",
-    icon: BookOpen,
-  },
-  {
-    title: "学期管理",
-    url: "/dashboard/admin/terms",
-    icon: Calendar,
-  },
-  {
-    title: "受講登録管理",
-    url: "/dashboard/admin/student-term-selections",
-    icon: UserCheck,
-  },
-  {
-    title: "レッスン枠管理",
-    url: "/dashboard/admin/lesson-slots",
-    icon: Clock,
-  },
-];
-
-const studentNav = [
-  {
-    title: "コース",
-    url: "/dashboard/student/courses",
-    icon: BookOpen,
-  },
-  {
-    title: "学習履歴",
-    url: "/dashboard/student/history",
-    icon: History,
-  },
-];
-
-const tutorNav = [
-  {
-    title: "レッスン管理",
-    url: "/dashboard/tutor/lessons",
-    icon: Calendar,
-  },
-  {
-    title: "生徒一覧",
-    url: "/dashboard/tutor/students",
-    icon: Users,
-  },
 ];
 
 const userNav = [
@@ -96,8 +35,6 @@ const userNav = [
 
 const navByRole: Record<string, typeof adminNav> = {
   admin: adminNav,
-  student: studentNav,
-  tutor: tutorNav,
   user: userNav,
 };
 
@@ -106,8 +43,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = session?.user;
 
   // loading state or generic fallback
-  const role = (user as { role?: string })?.role ?? "student";
-  const navItems = navByRole[role] ?? studentNav;
+  const role = (user as { role?: string })?.role ?? "user";
+  const navItems = navByRole[role] ?? userNav;
 
   return (
     <Sidebar collapsible="icon" {...props}>

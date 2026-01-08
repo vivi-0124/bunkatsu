@@ -1,25 +1,25 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Header } from "@/components/header";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
 
 export default function Home() {
-  const [message, setMessage] = useState();
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch("/api/hello");
-      const { message } = await res.json();
-      setMessage(message);
-    };
-    fetchData();
-  }, []);
-
-  if (!message) return <p>Loading...</p>;
+    if (!isPending) {
+      if (session?.user) {
+        router.replace("/dashboard/installments");
+      } else {
+        router.replace("/sign-in");
+      }
+    }
+  }, [session, isPending, router]);
 
   return (
-    <>
-      <Header />
-      <p>{message}</p>
-    </>
+    <div className="flex h-screen items-center justify-center">
+      <p>Loading...</p>
+    </div>
   );
 }

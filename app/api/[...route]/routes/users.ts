@@ -15,7 +15,7 @@ export const usersRoutes = new Hono()
     zValidator(
       "json",
       z.object({
-        role: z.enum(["admin", "tutor", "student"]),
+        role: z.enum(["admin", "user"]),
       }),
     ),
     async (c) => {

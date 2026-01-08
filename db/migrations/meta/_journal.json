@@ -71,6 +71,13 @@
       "when": 1767842381378,
       "tag": "0009_sudden_the_enforcers",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1767890883811,
+      "tag": "0010_vengeful_lord_hawal",
+      "breakpoints": true
     }
   ]
 }

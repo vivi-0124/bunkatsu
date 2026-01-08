@@ -40,8 +40,7 @@ type User = {
 
 const roleColors: Record<string, string> = {
   admin: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
-  tutor: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
-  student: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+  user: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
 };
 
 export default function UsersManagement() {
@@ -64,7 +63,7 @@ export default function UsersManagement() {
     try {
       const res = await client.api.users[":id"].role.$patch({
         param: { id: userId },
-        json: { role: newRole as "admin" | "tutor" | "student" },
+        json: { role: newRole as "admin" | "user" },
       });
       if (res.ok) {
         const resUsers = await client.api.users.$get();
@@ -132,7 +131,7 @@ export default function UsersManagement() {
                     </TableCell>
                     <TableCell>
                       <Select
-                        value={user.role || "student"}
+                        value={user.role || "user"}
                         onValueChange={(value: string) =>
                           updateRole(user.id, value)
                         }
@@ -153,18 +152,11 @@ export default function UsersManagement() {
                               Admin
                             </span>
                           </SelectItem>
-                          <SelectItem value="tutor">
+                          <SelectItem value="user">
                             <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleColors.tutor}`}
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleColors.user}`}
                             >
-                              Tutor
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="student">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleColors.student}`}
-                            >
-                              Student
+                              User
                             </span>
                           </SelectItem>
                         </SelectContent>

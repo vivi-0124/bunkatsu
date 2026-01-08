@@ -16,12 +16,8 @@ export default function DashboardPage() {
       const role = user.role;
       if (role === "admin") {
         router.replace("/dashboard/admin");
-      } else if (role === "tutor") {
-        router.replace("/dashboard/tutor");
-      } else if (role === "user") {
-        router.replace("/dashboard/installments");
       } else {
-        router.replace("/dashboard/student");
+        router.replace("/dashboard/installments");
       }
     } else {
       router.replace("/");
