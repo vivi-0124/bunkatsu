@@ -940,7 +940,6 @@ export default function InstallmentsPage() {
 
         {/* Status Filter */}
         <div className="flex items-center gap-2">
-          <IconFilter className="h-4 w-4 text-muted-foreground" />
           <Select
             value={statusFilter}
             onValueChange={(val: "all" | "active" | "completed") =>
@@ -948,6 +947,7 @@ export default function InstallmentsPage() {
             }
           >
             <SelectTrigger className="w-[140px] h-9">
+              <IconFilter className="h-4 w-4 text-muted-foreground" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1060,10 +1060,14 @@ export default function InstallmentsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {item.isCompleted && (
+                    {item.isCompleted ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                         <IconCheck className="h-3 w-3" />
                         完済
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        支払い中
                       </span>
                     )}
                   </TableCell>
