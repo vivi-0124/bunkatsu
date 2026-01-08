@@ -323,17 +323,17 @@ export default function InstallmentsPage() {
       {/* Action Buttons */}
       <div className="flex justify-end gap-2 mb-6">
         {/* CSV Actions */}
-        <Button variant="outline" size="sm" onClick={handleTemplateDownload}>
+        <Button variant="outline" onClick={handleTemplateDownload}>
           <IconFileTypeCsv className="h-4 w-4 mr-2" />
           テンプレート
         </Button>
-        <Button variant="outline" size="sm" onClick={handleExport}>
+        <Button variant="outline" onClick={handleExport}>
           <IconDownload className="h-4 w-4 mr-2" />
           エクスポート
         </Button>
         <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline">
               <IconUpload className="h-4 w-4 mr-2" />
               インポート
             </Button>
