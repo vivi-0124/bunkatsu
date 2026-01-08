@@ -486,7 +486,7 @@ export default function InstallmentsPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold text-lg">{item.name}</h3>
                       <span className="text-xs text-muted-foreground">
-                        #{item.id.slice(0, 8)}...
+                        #{item.id}
                       </span>
                       {item.isCompleted && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">

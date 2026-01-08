@@ -245,7 +245,7 @@ export const installmentsRoutes = new Hono()
         try {
           if (id) {
             // Update existing record
-            await db
+            const [updated] = await db
               .update(installments)
               .set({
                 name,
@@ -255,8 +255,27 @@ export const installmentsRoutes = new Hono()
                 totalAmount,
                 updatedAt: new Date().toISOString(),
               })
-              .where(eq(installments.id, id));
-            insertedRows.push({ id, name, updated: true });
+              .where(eq(installments.id, id))
+              .returning();
+
+            if (updated) {
+              insertedRows.push({ id, name, updated: true });
+            } else {
+              // ID provided but not found -> Insert with this ID
+              const [inserted] = await db
+                .insert(installments)
+                .values({
+                  id,
+                  userId,
+                  name,
+                  totalPayments,
+                  startDate,
+                  amountPerPayment,
+                  totalAmount,
+                })
+                .returning();
+              insertedRows.push(inserted);
+            }
           } else {
             // Insert new record
             const [inserted] = await db
