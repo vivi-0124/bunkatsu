@@ -20,6 +20,7 @@ import {
   terms,
 } from "@/db/schemas/book";
 import { dashboardTasks } from "@/db/schemas/dashboard-schema";
+import { installments } from "@/db/schemas/installment";
 
 const app = new Hono().basePath("/api");
 
@@ -596,6 +597,245 @@ const routes = app
         .values(values)
         .returning();
       return c.json(data);
+    },
+  )
+  // Installments CRUD
+  .get(
+    "/installments",
+    zValidator(
+      "query",
+      z.object({
+        userId: z.string(),
+      }),
+    ),
+    async (c) => {
+      const { userId } = c.req.valid("query");
+      const data = await db
+        .select()
+        .from(installments)
+        .where(eq(installments.userId, userId));
+      return c.json(data);
+    },
+  )
+  .post(
+    "/installments",
+    zValidator(
+      "json",
+      z.object({
+        userId: z.string(),
+        name: z.string(),
+        totalPayments: z.number(),
+        startDate: z.string(), // YYYY-MM形式
+        amountPerPayment: z.number(),
+        totalAmount: z.number(),
+      }),
+    ),
+    async (c) => {
+      const values = c.req.valid("json");
+      const [data] = await db.insert(installments).values(values).returning();
+      return c.json(data);
+    },
+  )
+  .patch(
+    "/installments/:id",
+    zValidator(
+      "json",
+      z.object({
+        name: z.string().optional(),
+        totalPayments: z.number().optional(),
+        startDate: z.string().optional(),
+        amountPerPayment: z.number().optional(),
+        totalAmount: z.number().optional(),
+      }),
+    ),
+    async (c) => {
+      const { id } = c.req.param();
+      const values = c.req.valid("json");
+      await db
+        .update(installments)
+        .set({ ...values, updatedAt: new Date().toISOString() })
+        .where(eq(installments.id, Number(id)));
+      return c.json({ success: true });
+    },
+  )
+  .delete("/installments/:id", async (c) => {
+    const { id } = c.req.param();
+    await db.delete(installments).where(eq(installments.id, Number(id)));
+    return c.json({ success: true });
+  })
+  // Installments CSV Export
+  .get(
+    "/installments/export",
+    zValidator(
+      "query",
+      z.object({
+        userId: z.string(),
+      }),
+    ),
+    async (c) => {
+      const { userId } = c.req.valid("query");
+      const data = await db
+        .select()
+        .from(installments)
+        .where(eq(installments.userId, userId));
+
+      const headers = [
+        "name",
+        "totalPayments",
+        "startDate",
+        "amountPerPayment",
+        "totalAmount",
+      ];
+      const csvRows = [headers.join(",")];
+
+      for (const row of data) {
+        csvRows.push(
+          [
+            `"${row.name.replace(/"/g, '""')}"`,
+            row.totalPayments,
+            row.startDate,
+            row.amountPerPayment,
+            row.totalAmount,
+          ].join(","),
+        );
+      }
+
+      const csvContent = csvRows.join("\n");
+      return new Response(csvContent, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="installments_${new Date().toISOString().split("T")[0]}.csv"`,
+        },
+      });
+    },
+  )
+  // Installments CSV Template
+  .get("/installments/template", async () => {
+    const headers = [
+      "name",
+      "totalPayments",
+      "startDate",
+      "amountPerPayment",
+      "totalAmount",
+    ];
+    const csvContent = `${headers.join(",")}\n`;
+    return new Response(csvContent, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition":
+          'attachment; filename="installments_template.csv"',
+      },
+    });
+  })
+  // Installments CSV Import
+  .post(
+    "/installments/import",
+    zValidator(
+      "json",
+      z.object({
+        userId: z.string(),
+        csvData: z.string(),
+      }),
+    ),
+    async (c) => {
+      const { userId, csvData } = c.req.valid("json");
+      const lines = csvData.trim().split("\n");
+
+      if (lines.length < 2) {
+        return c.json({ success: false, error: "No data rows found" }, 400);
+      }
+
+      const headerLine = lines[0];
+      const expectedHeaders = [
+        "name",
+        "totalPayments",
+        "startDate",
+        "amountPerPayment",
+        "totalAmount",
+      ];
+      const headers = headerLine
+        .split(",")
+        .map((h) => h.trim().replace(/^"|"$/g, ""));
+
+      // Validate headers
+      const headerMatch = expectedHeaders.every((h, i) => headers[i] === h);
+      if (!headerMatch) {
+        return c.json({ success: false, error: "Invalid CSV headers" }, 400);
+      }
+
+      const insertedRows = [];
+      const errors: string[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // Parse CSV line (handle quoted values)
+        const values: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        for (const char of line) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            values.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim());
+
+        if (values.length !== 5) {
+          errors.push(`Row ${i + 1}: Invalid number of columns`);
+          continue;
+        }
+
+        const [
+          name,
+          totalPaymentsStr,
+          startDate,
+          amountPerPaymentStr,
+          totalAmountStr,
+        ] = values;
+        const totalPayments = Number.parseInt(totalPaymentsStr, 10);
+        const amountPerPayment = Number.parseInt(amountPerPaymentStr, 10);
+        const totalAmount = Number.parseInt(totalAmountStr, 10);
+
+        if (
+          !name ||
+          Number.isNaN(totalPayments) ||
+          !startDate ||
+          Number.isNaN(amountPerPayment) ||
+          Number.isNaN(totalAmount)
+        ) {
+          errors.push(`Row ${i + 1}: Invalid data format`);
+          continue;
+        }
+
+        try {
+          const [inserted] = await db
+            .insert(installments)
+            .values({
+              userId,
+              name,
+              totalPayments,
+              startDate,
+              amountPerPayment,
+              totalAmount,
+            })
+            .returning();
+          insertedRows.push(inserted);
+        } catch (_err) {
+          errors.push(`Row ${i + 1}: Database error`);
+        }
+      }
+
+      return c.json({
+        success: true,
+        inserted: insertedRows.length,
+        errors,
+      });
     },
   );
 
