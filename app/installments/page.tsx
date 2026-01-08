@@ -332,23 +332,22 @@ export default function InstallmentsPage() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Monthly Summary Card */}
       {/* Header Actions & Summary */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        {/* Monthly Summary */}
-        <div className="flex items-center gap-8 px-1">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4 md:gap-8 px-1">
           <div>
-            <p className="text-sm text-muted-foreground font-medium mb-1">
+            <p className="text-xs text-muted-foreground font-medium mb-0.5">
               毎月の支払い総額
             </p>
-            <p className="text-3xl font-bold tracking-tight">
+            <p className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
               ¥{monthlySummary.toLocaleString()}
             </p>
           </div>
-          <div className="h-10 w-px bg-border" />
+          <div className="h-8 md:h-10 w-px bg-border" />
           <div>
-            <p className="text-sm text-muted-foreground font-medium mb-1">
+            <p className="text-xs text-muted-foreground font-medium mb-0.5">
               残りの支払い総額
             </p>
-            <p className="text-3xl font-bold tracking-tight">
+            <p className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
               ¥{totalRemaining.toLocaleString()}
             </p>
           </div>
