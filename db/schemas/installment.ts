@@ -7,7 +7,7 @@ export const installments = sqliteTable("installments", {
   totalPayments: integer("total_payments").notNull(),
   startDate: text("start_date").notNull(), // 支払い開始月 (YYYY-MM形式)
   amountPerPayment: integer("amount_per_payment").notNull(),
-  totalAmount: integer("total_amount").notNull(),
+  totalAmount: integer("total_amount"), // nullの場合は自動計算可能
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

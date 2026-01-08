@@ -6,7 +6,6 @@ import {
   IconDownload,
   IconEdit,
   IconFileTypeCsv,
-  IconLogout,
   IconPlus,
   IconTrash,
   IconUpload,
@@ -33,7 +32,7 @@ interface InstallmentRaw {
   totalPayments: number;
   startDate: string; // YYYY-MM形式
   amountPerPayment: number;
-  totalAmount: number;
+  totalAmount: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -139,7 +138,7 @@ export default function InstallmentsPage() {
       totalPayments: Number(formData.totalPayments),
       startDate: formData.startDate,
       amountPerPayment: Number(formData.amountPerPayment),
-      totalAmount: Number(formData.totalAmount),
+      totalAmount: formData.totalAmount ? Number(formData.totalAmount) : null,
     };
 
     try {
@@ -170,7 +169,7 @@ export default function InstallmentsPage() {
       totalPayments: String(item.totalPayments),
       startDate: item.startDate,
       amountPerPayment: String(item.amountPerPayment),
-      totalAmount: String(item.totalAmount),
+      totalAmount: item.totalAmount ? String(item.totalAmount) : "",
     });
     setIsDialogOpen(true);
   };
@@ -195,11 +194,6 @@ export default function InstallmentsPage() {
     });
     setEditingId(null);
     setIsDialogOpen(false);
-  };
-
-  const handleLogout = async () => {
-    await authClient.signOut();
-    router.replace("/");
   };
 
   // CSV Export handler
@@ -272,26 +266,6 @@ export default function InstallmentsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
-            <IconCreditCard className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              分割払い管理
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {session?.user?.name} さん
-            </p>
-          </div>
-        </div>
-        <Button variant="ghost" size="icon" onClick={handleLogout}>
-          <IconLogout className="h-5 w-5" />
-        </Button>
-      </div>
-
       {/* Monthly Summary Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card className="bg-linear-to-br from-indigo-500 to-indigo-600 text-white border-0 shadow-lg">
@@ -408,7 +382,7 @@ export default function InstallmentsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="totalPayments">何回払い</Label>
+                  <Label htmlFor="totalPayments">分割回数</Label>
                   <Input
                     id="totalPayments"
                     type="number"
@@ -441,7 +415,7 @@ export default function InstallmentsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="amountPerPayment">毎回支払う額</Label>
+                  <Label htmlFor="amountPerPayment">月額</Label>
                   <Input
                     id="amountPerPayment"
                     type="number"
@@ -465,8 +439,7 @@ export default function InstallmentsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, totalAmount: e.target.value })
                     }
-                    placeholder="例: 120000"
-                    required
+                    placeholder="例: 120000（任意）"
                   />
                 </div>
               </div>
@@ -530,7 +503,7 @@ export default function InstallmentsPage() {
                         </p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">毎回</span>
+                        <span className="text-muted-foreground">月額</span>
                         <p className="font-medium">
                           ¥{item.amountPerPayment.toLocaleString()}
                         </p>
@@ -538,7 +511,9 @@ export default function InstallmentsPage() {
                       <div>
                         <span className="text-muted-foreground">総額</span>
                         <p className="font-medium">
-                          ¥{item.totalAmount.toLocaleString()}
+                          {item.totalAmount
+                            ? `¥${item.totalAmount.toLocaleString()}`
+                            : "-"}
                         </p>
                       </div>
                       <div>

@@ -35,7 +35,7 @@ export const installmentsRoutes = new Hono()
         totalPayments: z.number(),
         startDate: z.string(), // YYYY-MM形式
         amountPerPayment: z.number(),
-        totalAmount: z.number(),
+        totalAmount: z.number().nullable().optional(),
       }),
     ),
     async (c) => {
@@ -138,8 +138,7 @@ export const installmentsRoutes = new Hono()
       // 更新の例（idを指定）
       '1,"サンプル商品（更新）",12,2026-01,10000,120000',
     ];
-    const comment =
-      "# 注意: 新規追加の場合はidを空欄にしてください。既存データを更新する場合はidを指定してください。";
+    const comment = "# 注意: 新規追加の場合はidを空欄にしてください。";
     const csvContent = `${comment}\n${headers.join(",")}\n${sampleRows.join("\n")}\n`;
     return new Response(csvContent, {
       headers: {
