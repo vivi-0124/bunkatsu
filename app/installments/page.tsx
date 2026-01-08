@@ -837,20 +837,22 @@ export default function InstallmentsPage() {
               <CardContent className="p-3 py-0">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{item.name}</span>
-                      {item.isCompleted && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          <IconCheck className="h-2.5 w-2.5" />
-                          完済
-                        </span>
-                      )}
-                    </div>
+                    <span className="font-medium">{item.name}</span>
                     <p className="text-[10px] text-muted-foreground font-mono">
                       #{item.id}
                     </p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1.5">
+                    {item.isCompleted ? (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <IconCheck className="h-2.5 w-2.5" />
+                        完済
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        支払い中
+                      </span>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
