@@ -707,30 +707,30 @@ export default function InstallmentsPage() {
       </Dialog>
 
       {/* Mobile Filter & Sort Controls */}
-      <div className="md:hidden space-y-3 mb-4">
-        {/* Search Input */}
-        <div className="relative">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="項目名で検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9 h-10"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-              onClick={() => setSearchQuery("")}
-            >
-              <IconX className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
+      <div className="md:hidden space-y-2 mb-4">
+        {/* Search, Filter & Sort Row */}
+        <div className="flex items-center gap-1.5">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-0">
+            <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-7 h-8 text-xs"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                onClick={() => setSearchQuery("")}
+              >
+                <IconX className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
 
-        {/* Filter & Sort Row */}
-        <div className="flex items-center gap-2">
           {/* Status Filter */}
           <Select
             value={statusFilter}
@@ -738,14 +738,20 @@ export default function InstallmentsPage() {
               setStatusFilter(val)
             }
           >
-            <SelectTrigger className="flex-1 h-9">
-              <IconFilter className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-auto h-8 gap-1 text-xs px-2">
+              <IconFilter className="h-3.5 w-3.5 text-muted-foreground" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">すべて</SelectItem>
-              <SelectItem value="active">支払い中</SelectItem>
-              <SelectItem value="completed">完済</SelectItem>
+              <SelectItem value="all" className="text-xs">
+                すべて
+              </SelectItem>
+              <SelectItem value="active" className="text-xs">
+                支払い中
+              </SelectItem>
+              <SelectItem value="completed" className="text-xs">
+                完済
+              </SelectItem>
             </SelectContent>
           </Select>
 
@@ -761,34 +767,50 @@ export default function InstallmentsPage() {
               setSortDirection(dir);
             }}
           >
-            <SelectTrigger className="flex-1 h-9">
-              <IconArrowsSort className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-auto h-8 gap-1 text-xs px-2">
+              <IconArrowsSort className="h-3.5 w-3.5 text-muted-foreground" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="startDate-desc">開始日（新しい順）</SelectItem>
-              <SelectItem value="startDate-asc">開始日（古い順）</SelectItem>
-              <SelectItem value="name-asc">項目名（A→Z）</SelectItem>
-              <SelectItem value="name-desc">項目名（Z→A）</SelectItem>
-              <SelectItem value="amountPerPayment-desc">
+              <SelectItem value="startDate-desc" className="text-xs">
+                開始日（新しい順）
+              </SelectItem>
+              <SelectItem value="startDate-asc" className="text-xs">
+                開始日（古い順）
+              </SelectItem>
+              <SelectItem value="name-asc" className="text-xs">
+                項目名（A→Z）
+              </SelectItem>
+              <SelectItem value="name-desc" className="text-xs">
+                項目名（Z→A）
+              </SelectItem>
+              <SelectItem value="amountPerPayment-desc" className="text-xs">
                 月額（高い順）
               </SelectItem>
-              <SelectItem value="amountPerPayment-asc">
+              <SelectItem value="amountPerPayment-asc" className="text-xs">
                 月額（低い順）
               </SelectItem>
-              <SelectItem value="remaining-desc">残り（多い順）</SelectItem>
-              <SelectItem value="remaining-asc">残り（少ない順）</SelectItem>
-              <SelectItem value="progress-desc">進捗（高い順）</SelectItem>
-              <SelectItem value="progress-asc">進捗（低い順）</SelectItem>
+              <SelectItem value="remaining-desc" className="text-xs">
+                残り（多い順）
+              </SelectItem>
+              <SelectItem value="remaining-asc" className="text-xs">
+                残り（少ない順）
+              </SelectItem>
+              <SelectItem value="progress-desc" className="text-xs">
+                進捗（高い順）
+              </SelectItem>
+              <SelectItem value="progress-asc" className="text-xs">
+                進捗（低い順）
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Results Count */}
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           {installments.length}件表示
           {(statusFilter !== "all" || searchQuery) && (
-            <span className="text-xs ml-1">
+            <span className="ml-1">
               (全{installmentsCalculated.length}件中)
             </span>
           )}
@@ -810,7 +832,7 @@ export default function InstallmentsPage() {
           installments.map((item) => (
             <Card
               key={item.id}
-              className={item.isCompleted ? "opacity-60" : ""}
+              className={`py-3 ${item.isCompleted ? "opacity-60" : ""}`}
             >
               <CardContent className="p-3 py-0">
                 <div className="flex items-start justify-between mb-2">
