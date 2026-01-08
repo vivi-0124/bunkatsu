@@ -131,7 +131,16 @@ export const installmentsRoutes = new Hono()
       "amountPerPayment",
       "totalAmount",
     ];
-    const csvContent = `${headers.join(",")}\n`;
+    // サンプル行（説明付き）
+    const sampleRows = [
+      // 新規追加の例（idは空欄）
+      ',"サンプル商品（新規）",12,2026-01,10000,120000',
+      // 更新の例（idを指定）
+      '1,"サンプル商品（更新）",12,2026-01,10000,120000',
+    ];
+    const comment =
+      "# 注意: 新規追加の場合はidを空欄にしてください。既存データを更新する場合はidを指定してください。";
+    const csvContent = `${comment}\n${headers.join(",")}\n${sampleRows.join("\n")}\n`;
     return new Response(csvContent, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
@@ -152,7 +161,11 @@ export const installmentsRoutes = new Hono()
     ),
     async (c) => {
       const { userId, csvData } = c.req.valid("json");
-      const lines = csvData.trim().split("\n");
+      // コメント行（#で始まる）を除外
+      const lines = csvData
+        .trim()
+        .split("\n")
+        .filter((line) => !line.trim().startsWith("#"));
 
       if (lines.length < 2) {
         return c.json({ success: false, error: "No data rows found" }, 400);
