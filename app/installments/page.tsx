@@ -3,6 +3,7 @@
 import {
   IconCheck,
   IconCreditCard,
+  IconDots,
   IconDownload,
   IconEdit,
   IconFileTypeCsv,
@@ -14,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,6 +41,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
 
 interface InstallmentRaw {
@@ -315,336 +331,325 @@ export default function InstallmentsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Monthly Summary Card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <Card className="bg-linear-to-br from-indigo-500 to-indigo-600 text-white border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium opacity-90">
+      {/* Header Actions & Summary */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        {/* Monthly Summary */}
+        <div className="flex items-center gap-8 px-1">
+          <div>
+            <p className="text-sm text-muted-foreground font-medium mb-1">
               毎月の支払い総額
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
+            </p>
+            <p className="text-3xl font-bold tracking-tight">
               ¥{monthlySummary.toLocaleString()}
             </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-linear-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium opacity-90">
+          </div>
+          <div className="h-10 w-px bg-border" />
+          <div>
+            <p className="text-sm text-muted-foreground font-medium mb-1">
               残りの支払い総額
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
+            </p>
+            <p className="text-3xl font-bold tracking-tight">
               ¥{totalRemaining.toLocaleString()}
             </p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-2 mb-6">
-        {/* CSV Actions */}
-        <Button variant="outline" onClick={handleTemplateDownload}>
-          <IconFileTypeCsv className="h-4 w-4 mr-2" />
-          テンプレート
-        </Button>
-        <Button variant="outline" onClick={handleExport}>
-          <IconDownload className="h-4 w-4 mr-2" />
-          エクスポート
-        </Button>
-        <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <IconUpload className="h-4 w-4 mr-2" />
-              インポート
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>CSVインポート</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="csv-file">CSVファイル</Label>
-                <Input
-                  id="csv-file"
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                テンプレートをダウンロードして、フォーマットを確認してください。
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsImportDialogOpen(false);
-                    setImportFile(null);
-                  }}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  onClick={handleImport}
-                  disabled={!importFile || isImporting}
-                  className="bg-linear-to-r from-indigo-500 to-purple-600"
-                >
-                  {isImporting ? "インポート中..." : "インポート"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-        {/* New Entry Button */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              className="bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-              onClick={() => resetForm()}
-            >
-              <IconPlus className="h-4 w-4 mr-2" />
-              新規追加
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingId ? "分割払いを編集" : "新しい分割払いを追加"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">項目名</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="例: MacBook Pro"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {/* Secondary Actions Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <IconDots className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleTemplateDownload}>
+                <IconFileTypeCsv className="h-4 w-4 mr-2" />
+                テンプレート
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExport}>
+                <IconDownload className="h-4 w-4 mr-2" />
+                エクスポート
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsImportDialogOpen(true)}>
+                <IconUpload className="h-4 w-4 mr-2" />
+                インポート
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Import Dialog (Controlled by state) */}
+          <Dialog
+            open={isImportDialogOpen}
+            onOpenChange={setIsImportDialogOpen}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>CSVインポート</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="totalPayments">分割回数</Label>
+                  <Label htmlFor="csv-file">CSVファイル</Label>
                   <Input
-                    id="totalPayments"
-                    type="number"
-                    value={formData.totalPayments}
+                    id="csv-file"
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  テンプレートをダウンロードして、フォーマットを確認してください。
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsImportDialogOpen(false);
+                      setImportFile(null);
+                    }}
+                  >
+                    キャンセル
+                  </Button>
+                  <Button
+                    onClick={handleImport}
+                    disabled={!importFile || isImporting}
+                    className="bg-linear-to-r from-indigo-500 to-purple-600"
+                  >
+                    {isImporting ? "インポート中..." : "インポート"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* New Entry Button */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="icon"
+                className="bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+                onClick={() => resetForm()}
+              >
+                <IconPlus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingId ? "分割払いを編集" : "新しい分割払いを追加"}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">項目名</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        totalPayments: e.target.value,
-                      })
+                      setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="例: 12"
+                    placeholder="例: MacBook Pro"
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>開始月</Label>
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.startDate.split("-")[0]}
-                      onValueChange={(val) =>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="totalPayments">分割回数</Label>
+                    <Input
+                      id="totalPayments"
+                      type="number"
+                      value={formData.totalPayments}
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          startDate: `${val}-${formData.startDate.split("-")[1]}`,
+                          totalPayments: e.target.value,
                         })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="年" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 41 }, (_, i) => {
-                          const year = new Date().getFullYear() - 30 + i;
-                          return (
-                            <SelectItem key={year} value={String(year)}>
-                              {year}年
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={formData.startDate.split("-")[1]}
-                      onValueChange={(val) =>
-                        setFormData({
-                          ...formData,
-                          startDate: `${formData.startDate.split("-")[0]}-${val}`,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="月" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const month = String(i + 1).padStart(2, "0");
-                          return (
-                            <SelectItem key={month} value={month}>
-                              {i + 1}月
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
+                      placeholder="例: 12"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>開始月</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={formData.startDate.split("-")[0]}
+                        onValueChange={(val) =>
+                          setFormData({
+                            ...formData,
+                            startDate: `${val}-${formData.startDate.split("-")[1]}`,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="年" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 41 }, (_, i) => {
+                            const year = new Date().getFullYear() - 30 + i;
+                            return (
+                              <SelectItem key={year} value={String(year)}>
+                                {year}年
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={formData.startDate.split("-")[1]}
+                        onValueChange={(val) =>
+                          setFormData({
+                            ...formData,
+                            startDate: `${formData.startDate.split("-")[0]}-${val}`,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="月" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const month = String(i + 1).padStart(2, "0");
+                            return (
+                              <SelectItem key={month} value={month}>
+                                {i + 1}月
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amountPerPayment">月額</Label>
-                  <Input
-                    id="amountPerPayment"
-                    type="number"
-                    value={formData.amountPerPayment}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        amountPerPayment: e.target.value,
-                      })
-                    }
-                    placeholder="例: 10000"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="amountPerPayment">月額</Label>
+                    <Input
+                      id="amountPerPayment"
+                      type="number"
+                      value={formData.amountPerPayment}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          amountPerPayment: e.target.value,
+                        })
+                      }
+                      placeholder="例: 10000"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalAmount">総額</Label>
+                    <Input
+                      id="totalAmount"
+                      type="number"
+                      value={formData.totalAmount}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          totalAmount: e.target.value,
+                        })
+                      }
+                      placeholder="例: 120000（任意）"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="totalAmount">総額</Label>
-                  <Input
-                    id="totalAmount"
-                    type="number"
-                    value={formData.totalAmount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, totalAmount: e.target.value })
-                    }
-                    placeholder="例: 120000（任意）"
-                  />
-                </div>
-              </div>
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  キャンセル
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-linear-to-r from-indigo-500 to-purple-600"
-                >
-                  {editingId ? "更新" : "追加"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>削除の確認</DialogTitle>
-              <DialogDescription>
-                本当にこの分割払いを削除してもよろしいですか？
-                <br />
-                この操作は取り消せません。
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteDialogOpen(false)}
-              >
-                キャンセル
-              </Button>
-              <Button variant="destructive" onClick={executeDelete}>
-                削除する
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                <DialogFooter className="pt-4">
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    キャンセル
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-linear-to-r from-indigo-500 to-purple-600"
+                  >
+                    {editingId ? "更新" : "追加"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-
-      {/* Installments List */}
-      <div className="space-y-4">
-        {installments.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <IconCreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                分割払いがありません。
-                <br />
-                「新規追加」から登録してください。
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          installments.map((item) => (
-            <Card
-              key={item.id}
-              className={`overflow-hidden hover:shadow-lg transition-shadow ${
-                item.isCompleted ? "opacity-60" : ""
-              }`}
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>削除の確認</DialogTitle>
+            <DialogDescription>
+              本当にこの分割払いを削除してもよろしいですか？
+              <br />
+              この操作は取り消せません。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-lg">{item.name}</h3>
-                      <span className="text-xs text-muted-foreground">
+              キャンセル
+            </Button>
+            <Button variant="destructive" onClick={executeDelete}>
+              削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px]">項目名</TableHead>
+              <TableHead>ステータス</TableHead>
+              <TableHead>進捗</TableHead>
+              <TableHead>月額</TableHead>
+              <TableHead>総額</TableHead>
+              <TableHead>残り</TableHead>
+              <TableHead>開始</TableHead>
+              <TableHead className="text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {installments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+                    <IconCreditCard className="h-8 w-8 mb-2 opacity-50" />
+                    <p>分割払いがありません。</p>
+                    <p className="text-xs">
+                      「新規追加」から登録してください。
+                    </p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              installments.map((item) => (
+                <TableRow
+                  key={item.id}
+                  className={item.isCompleted ? "opacity-60 bg-muted/50" : ""}
+                >
+                  <TableCell className="font-medium">
+                    <div>
+                      {item.name}
+                      <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">
                         #{item.id}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {item.isCompleted && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <IconCheck className="h-3 w-3" />
+                        完済
                       </span>
-                      {item.isCompleted && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          <IconCheck className="h-3 w-3" />
-                          完済
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">進捗</span>
-                        <p className="font-medium">
-                          {item.currentPayment} / {item.totalPayments} 回
-                        </p>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-[120px]">
+                      <div className="text-xs mb-1">
+                        {item.currentPayment} / {item.totalPayments} 回
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">月額</span>
-                        <p className="font-medium">
-                          ¥{item.amountPerPayment.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">総額</span>
-                        <p className="font-medium">
-                          {item.totalAmount
-                            ? `¥${item.totalAmount.toLocaleString()}`
-                            : "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">残り</span>
-                        <p className="font-medium text-indigo-600">
-                          {item.isCompleted ? (
-                            "¥0"
-                          ) : (
-                            <>
-                              ¥
-                              {(
-                                item.amountPerPayment *
-                                (item.totalPayments - item.currentPayment + 1)
-                              ).toLocaleString()}
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Progress Bar */}
-                    <div className="mt-4">
-                      <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
                             item.isCompleted
@@ -652,37 +657,61 @@ export default function InstallmentsPage() {
                               : "bg-linear-to-r from-indigo-500 to-purple-600"
                           }`}
                           style={{
-                            width: `${(item.currentPayment / item.totalPayments) * 100}%`,
+                            width: `${Math.min((item.currentPayment / item.totalPayments) * 100, 100)}%`,
                           }}
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      開始: {item.startDate}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(item)}
-                    >
-                      <IconEdit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(item.id)}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+                  </TableCell>
+                  <TableCell>
+                    ¥{item.amountPerPayment.toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    {item.totalAmount
+                      ? `¥${item.totalAmount.toLocaleString()}`
+                      : "-"}
+                  </TableCell>
+                  <TableCell className="font-medium text-indigo-600">
+                    {item.isCompleted ? (
+                      "¥0"
+                    ) : (
+                      <>
+                        ¥
+                        {(
+                          item.amountPerPayment *
+                          (item.totalPayments - item.currentPayment + 1)
+                        ).toLocaleString()}
+                      </>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {item.startDate}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(item)}
+                        className="h-8 w-8"
+                      >
+                        <IconEdit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(item.id)}
+                        className="h-8 w-8 text-red-500 hover:text-red-600"
+                      >
+                        <IconTrash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
