@@ -1,4 +1,5 @@
-import { Hono } from "hono";
+import { swaggerUI } from "@hono/swagger-ui";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { handle } from "hono/vercel";
 import { areasRoutes } from "./routes/areas";
 import { coursesRoutes } from "./routes/courses";
@@ -13,11 +14,12 @@ import { reflectionsRoutes } from "./routes/reflections";
 import { stagesRoutes } from "./routes/stages";
 import { studentStageProgressRoutes } from "./routes/student-stage-progress";
 import { studentTermSelectionsRoutes } from "./routes/student-term-selections";
+
 import { studentsRoutes } from "./routes/students";
 import { termsRoutes } from "./routes/terms";
 import { usersRoutes } from "./routes/users";
 
-const app = new Hono().basePath("/api");
+const app = new OpenAPIHono().basePath("/api");
 
 // Mount all routes
 const routes = app
@@ -37,6 +39,18 @@ const routes = app
   .route("/", holidaysRoutes)
   .route("/", studentStageProgressRoutes)
   .route("/", installmentsRoutes);
+
+// The OpenAPI documentation will be available at /api/doc
+app.doc("/doc", {
+  openapi: "3.0.0",
+  info: {
+    version: "1.0.0",
+    title: "Hono API",
+  },
+});
+
+// The Swagger UI will be available at /api/ui
+app.get("/ui", swaggerUI({ url: "/api/doc" }));
 
 export type AppType = typeof routes;
 

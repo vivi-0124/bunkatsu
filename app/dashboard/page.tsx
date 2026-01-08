@@ -18,6 +18,8 @@ export default function DashboardPage() {
         router.replace("/dashboard/admin");
       } else if (role === "tutor") {
         router.replace("/dashboard/tutor");
+      } else if (role === "user") {
+        router.replace("/dashboard/installments");
       } else {
         router.replace("/dashboard/student");
       }

@@ -4,6 +4,7 @@ import {
   BookOpen,
   Calendar,
   Clock,
+  CreditCard,
   GraduationCap,
   History,
   MapPin,
@@ -85,10 +86,19 @@ const tutorNav = [
   },
 ];
 
+const userNav = [
+  {
+    title: "分割払い",
+    url: "/dashboard/installments",
+    icon: CreditCard,
+  },
+];
+
 const navByRole: Record<string, typeof adminNav> = {
   admin: adminNav,
   student: studentNav,
   tutor: tutorNav,
+  user: userNav,
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
