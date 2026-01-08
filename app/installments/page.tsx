@@ -645,7 +645,7 @@ export default function InstallmentsPage() {
                           amountPerPayment: e.target.value,
                         })
                       }
-                      placeholder="例: 10000"
+                      placeholder="例: 1000"
                       required
                     />
                   </div>
