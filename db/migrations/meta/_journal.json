@@ -78,6 +78,13 @@
       "when": 1767890883811,
       "tag": "0010_vengeful_lord_hawal",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1767928240374,
+      "tag": "0011_salty_zaran",
+      "breakpoints": true
     }
   ]
 }
