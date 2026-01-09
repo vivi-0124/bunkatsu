@@ -4,8 +4,8 @@ import { CreditCard, Moon, Sun, Users, Wallet } from "lucide-react";
 import { useTheme } from "next-themes";
 import type * as React from "react";
 import { useEffect, useState } from "react";
-import { NavSimple } from "@/components/nav-simple";
-import { NavUser } from "@/components/nav-user";
+import { NavSimple } from "@/components/dashboard/navigation/nav-simple";
+import { NavUser } from "@/components/dashboard/navigation/nav-user";
 import {
   Sidebar,
   SidebarContent,
