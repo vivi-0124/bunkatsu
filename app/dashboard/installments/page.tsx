@@ -1097,7 +1097,7 @@ export default function InstallmentsPage() {
                       </div>
                     </div>
                     {/* Stats */}
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm min-w-0">
                       <div>
                         <span className="text-muted-foreground text-xs">
                           月額
@@ -1106,11 +1106,11 @@ export default function InstallmentsPage() {
                           ¥{item.amountPerPayment.toLocaleString()}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right min-w-0 flex-1">
                         <span className="text-muted-foreground text-xs">
                           残り
                         </span>
-                        <p className="font-medium text-indigo-600">
+                        <p className="font-medium text-indigo-600 truncate">
                           {item.isCompleted
                             ? "¥0"
                             : `¥${(item.amountPerPayment * (item.totalPayments - item.currentPayment + 1)).toLocaleString()}`}
