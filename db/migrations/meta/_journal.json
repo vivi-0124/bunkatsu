@@ -85,6 +85,13 @@
       "when": 1767928240374,
       "tag": "0011_salty_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1768299285578,
+      "tag": "0012_clear_bug",
+      "breakpoints": true
     }
   ]
 }

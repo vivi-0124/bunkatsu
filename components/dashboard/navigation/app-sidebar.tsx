@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditCard, Moon, Sun, Users, Wallet } from "lucide-react";
+import { CreditCard, Moon, Receipt, Sun, Users, Wallet } from "lucide-react";
 import { useTheme } from "next-themes";
 import type * as React from "react";
 import { useEffect, useState } from "react";
@@ -32,6 +32,11 @@ const userNav = [
     title: "分割払い",
     url: "/dashboard/installments",
     icon: CreditCard,
+  },
+  {
+    title: "月別収支",
+    url: "/dashboard/monthly",
+    icon: Receipt,
   },
 ];
 
