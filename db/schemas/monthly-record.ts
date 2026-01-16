@@ -10,6 +10,7 @@ export const monthlyPayments = sqliteTable("monthly_payments", {
   amount: integer("amount").notNull(),
   paymentDate: text("payment_date"), // MM/DD or arbitrary text
   isPaid: integer("is_paid", { mode: "boolean" }).notNull().default(false),
+  templateId: text("template_id"), // 項目テンプレートへの参照（任意）
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -27,6 +28,7 @@ export const monthlyIncomes = sqliteTable("monthly_incomes", {
   name: text("name").notNull(),
   amount: integer("amount").notNull(),
   date: text("date"), // MM/DD or arbitrary text
+  templateId: text("template_id"), // 項目テンプレートへの参照（任意）
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

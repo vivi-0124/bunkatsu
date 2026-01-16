@@ -122,9 +122,24 @@ export default function MonthlyPage() {
 
   const monthStr = format(currentDate, "yyyy-MM");
 
+  // テンプレートから月別レコードを自動生成
+  const generateRecordsFromTemplates = useCallback(async () => {
+    if (!session?.user?.id) return;
+    try {
+      await client.api["monthly-records"].generate.$post({
+        json: { userId: session.user.id, month: monthStr },
+      });
+    } catch (error) {
+      console.error("Failed to generate records from templates:", error);
+    }
+  }, [monthStr, session?.user?.id]);
+
   const fetchRecords = useCallback(async () => {
     setIsLoading(true);
     try {
+      // 最初にテンプレートから自動生成（既存レコードがあれば何もしない）
+      await generateRecordsFromTemplates();
+
       const res = await client.api["monthly-records"].$get({
         query: { month: monthStr },
       });
@@ -139,7 +154,7 @@ export default function MonthlyPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [monthStr]);
+  }, [monthStr, generateRecordsFromTemplates]);
 
   useEffect(() => {
     fetchRecords();

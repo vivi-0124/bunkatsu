@@ -3,6 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "@/db";
+import {
+  incomeItemTemplates,
+  paymentItemTemplates,
+} from "@/db/schemas/monthly-item-template";
 import { monthlyIncomes, monthlyPayments } from "@/db/schemas/monthly-record";
 
 // CSVのパースロジック
@@ -365,5 +369,213 @@ export const monthlyRecordsRoutes = new Hono()
         .where(eq(monthlyPayments.id, id))
         .returning();
       return c.json({ success: true, data: result[0] });
+    },
+  )
+  // ========== テンプレート関連 ==========
+  // テンプレート一覧取得
+  .get(
+    "/monthly-records/templates",
+    zValidator("query", z.object({ userId: z.string() })),
+    async (c) => {
+      const { userId } = c.req.valid("query");
+      const payments = await db
+        .select()
+        .from(paymentItemTemplates)
+        .where(
+          and(
+            eq(paymentItemTemplates.userId, userId),
+            eq(paymentItemTemplates.isActive, true),
+          ),
+        );
+      const incomes = await db
+        .select()
+        .from(incomeItemTemplates)
+        .where(
+          and(
+            eq(incomeItemTemplates.userId, userId),
+            eq(incomeItemTemplates.isActive, true),
+          ),
+        );
+      return c.json({ payments, incomes });
+    },
+  )
+  // 支出テンプレート追加
+  .post(
+    "/monthly-records/templates/payment",
+    zValidator(
+      "json",
+      z.object({
+        userId: z.string(),
+        name: z.string(),
+        defaultAmount: z.number().nullable().optional(),
+        defaultPaymentDate: z.string().nullable().optional(),
+      }),
+    ),
+    async (c) => {
+      const data = c.req.valid("json");
+      const result = await db
+        .insert(paymentItemTemplates)
+        .values({
+          userId: data.userId,
+          name: data.name,
+          defaultAmount: data.defaultAmount ?? null,
+          defaultPaymentDate: data.defaultPaymentDate ?? null,
+        })
+        .returning();
+      return c.json({ success: true, data: result[0] });
+    },
+  )
+  // 収入テンプレート追加
+  .post(
+    "/monthly-records/templates/income",
+    zValidator(
+      "json",
+      z.object({
+        userId: z.string(),
+        name: z.string(),
+        defaultAmount: z.number().nullable().optional(),
+        defaultDate: z.string().nullable().optional(),
+      }),
+    ),
+    async (c) => {
+      const data = c.req.valid("json");
+      const result = await db
+        .insert(incomeItemTemplates)
+        .values({
+          userId: data.userId,
+          name: data.name,
+          defaultAmount: data.defaultAmount ?? null,
+          defaultDate: data.defaultDate ?? null,
+        })
+        .returning();
+      return c.json({ success: true, data: result[0] });
+    },
+  )
+  // テンプレート削除（論理削除）
+  .delete(
+    "/monthly-records/templates/:type/:id",
+    zValidator(
+      "param",
+      z.object({
+        type: z.enum(["payment", "income"]),
+        id: z.string(),
+      }),
+    ),
+    async (c) => {
+      const { type, id } = c.req.valid("param");
+      if (type === "payment") {
+        await db
+          .update(paymentItemTemplates)
+          .set({ isActive: false })
+          .where(eq(paymentItemTemplates.id, id));
+      } else {
+        await db
+          .update(incomeItemTemplates)
+          .set({ isActive: false })
+          .where(eq(incomeItemTemplates.id, id));
+      }
+      return c.json({ success: true });
+    },
+  )
+  // 月別レコード自動生成（テンプレートから）
+  .post(
+    "/monthly-records/generate",
+    zValidator(
+      "json",
+      z.object({
+        userId: z.string(),
+        month: z.string(),
+      }),
+    ),
+    async (c) => {
+      const { userId, month } = c.req.valid("json");
+
+      // 既存のレコードを取得
+      const existingPayments = await db
+        .select()
+        .from(monthlyPayments)
+        .where(
+          and(
+            eq(monthlyPayments.month, month),
+            eq(monthlyPayments.userId, userId),
+          ),
+        );
+      const existingIncomes = await db
+        .select()
+        .from(monthlyIncomes)
+        .where(
+          and(
+            eq(monthlyIncomes.month, month),
+            eq(monthlyIncomes.userId, userId),
+          ),
+        );
+
+      // テンプレートを取得
+      const paymentTemplates = await db
+        .select()
+        .from(paymentItemTemplates)
+        .where(
+          and(
+            eq(paymentItemTemplates.userId, userId),
+            eq(paymentItemTemplates.isActive, true),
+          ),
+        );
+      const incomeTemplates = await db
+        .select()
+        .from(incomeItemTemplates)
+        .where(
+          and(
+            eq(incomeItemTemplates.userId, userId),
+            eq(incomeItemTemplates.isActive, true),
+          ),
+        );
+
+      // 既存のtemplateIdを取得
+      const existingPaymentTemplateIds = new Set(
+        existingPayments.map((p) => p.templateId).filter(Boolean),
+      );
+      const existingIncomeTemplateIds = new Set(
+        existingIncomes.map((i) => i.templateId).filter(Boolean),
+      );
+
+      // 新しいレコードを作成（既にテンプレートから生成されていないもののみ）
+      const newPayments = paymentTemplates
+        .filter((t) => !existingPaymentTemplateIds.has(t.id))
+        .map((t) => ({
+          userId,
+          month,
+          name: t.name,
+          amount: t.defaultAmount ?? 0,
+          paymentDate: t.defaultPaymentDate ?? "",
+          isPaid: false,
+          templateId: t.id,
+        }));
+
+      const newIncomes = incomeTemplates
+        .filter((t) => !existingIncomeTemplateIds.has(t.id))
+        .map((t) => ({
+          userId,
+          month,
+          name: t.name,
+          amount: t.defaultAmount ?? 0,
+          date: t.defaultDate ?? "",
+          templateId: t.id,
+        }));
+
+      // 挿入
+      if (newPayments.length > 0) {
+        await db.insert(monthlyPayments).values(newPayments);
+      }
+      if (newIncomes.length > 0) {
+        await db.insert(monthlyIncomes).values(newIncomes);
+      }
+
+      return c.json({
+        success: true,
+        generated: {
+          payments: newPayments.length,
+          incomes: newIncomes.length,
+        },
+      });
     },
   );
