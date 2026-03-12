@@ -1,7 +1,7 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { handle } from "hono/vercel";
-import { installmentsRoutes } from "./routes/installments";
+import { fixedCostsRoutes } from "./routes/fixed-costs";
 import { monthlyRecordsRoutes } from "./routes/monthly-records";
 import { usersRoutes } from "./routes/users";
 
@@ -10,7 +10,7 @@ const app = new OpenAPIHono().basePath("/api");
 // Mount all routes
 const routes = app
   .route("/", usersRoutes)
-  .route("/", installmentsRoutes)
+  .route("/", fixedCostsRoutes)
   .route("/", monthlyRecordsRoutes);
 
 // The OpenAPI documentation will be available at /api/doc

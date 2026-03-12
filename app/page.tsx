@@ -53,7 +53,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -88,7 +88,7 @@ export default function Home() {
         <section className="relative overflow-hidden">
           {/* Background gradient */}
           <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10" />
+            <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-accent/10" />
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/10 blur-3xl" />
           </div>
 
@@ -102,15 +102,15 @@ export default function Home() {
               </div>
 
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-                分割払いを
+                固定費と
                 <br />
-                <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  スマートに管理
+                <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  分割払いを管理
                 </span>
               </h1>
 
               <p className="max-w-2xl text-lg text-muted-foreground sm:text-xl leading-relaxed">
-                複数の分割払いを一元管理。支払いスケジュールの把握、月ごとの支出確認がカンタンに。
+                固定費や分割払いを一元管理。支払いスケジュールの把握、月ごとの支出確認がカンタンに。
                 もう支払い忘れの心配はありません。
               </p>
 
@@ -169,7 +169,7 @@ export default function Home() {
                 な機能
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                分割払いの管理に必要な機能をすべて備えています。
+                固定費や分割払いの管理に必要な機能をすべて備えています。
                 直感的な操作で、誰でもカンタンに使えます。
               </p>
             </div>
@@ -180,7 +180,7 @@ export default function Home() {
                   key={feature.title}
                   className="group relative overflow-hidden border-0 bg-card/50 backdrop-blur transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <CardHeader>
                     <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                       <feature.icon className="h-6 w-6" />
@@ -206,7 +206,7 @@ export default function Home() {
                 使い方は<span className="text-primary">かんたん</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                3ステップで分割払い管理を始められます
+                3ステップで固定費・分割払い管理を始められます
               </p>
             </div>
 
@@ -220,7 +220,7 @@ export default function Home() {
                 {
                   step: "02",
                   title: "支払い情報を登録",
-                  description: "分割払いの詳細を入力するだけ",
+                  description: "固定費や分割払いの詳細を入力するだけ",
                 },
                 {
                   step: "03",
@@ -246,7 +246,7 @@ export default function Home() {
         {/* CTA Section */}
         <section className="py-24 md:py-32 bg-muted/30">
           <div className="container mx-auto px-4">
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/80 p-12 md:p-16 text-center">
+            <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-primary to-primary/80 p-12 md:p-16 text-center">
               <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-100" />
               <div className="relative">
                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-primary-foreground mb-4">
@@ -254,7 +254,7 @@ export default function Home() {
                 </h2>
                 <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto mb-8">
                   Googleアカウントですぐに始められます。
-                  分割払い管理の新しいスタンダードを体験してください。
+                  固定費・分割払い管理の新しいスタンダードを体験してください。
                 </p>
                 <Dialog>
                   <DialogTrigger asChild>

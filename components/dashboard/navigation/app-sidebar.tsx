@@ -30,7 +30,7 @@ const adminNav = [
 const userNav = [
   {
     title: "分割払い",
-    url: "/dashboard/installments",
+    url: "/dashboard/fixed-costs",
     icon: CreditCard,
   },
   {
@@ -70,12 +70,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="/dashboard">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                <div className="bg-linear-to-br from-indigo-500 to-purple-600 text-white flex aspect-square size-8 items-center justify-center rounded-lg shadow-lg shadow-indigo-500/20">
                   <Wallet className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Dashboard</span>
-                  <span className="truncate text-xs capitalize">{role}</span>
+                  <span className="truncate font-semibold">分かつ</span>
+                  <span className="truncate text-xs capitalize text-muted-foreground">
+                    {role}
+                  </span>
                 </div>
               </a>
             </SidebarMenuButton>

@@ -29,56 +29,38 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: session } = authClient.useSession();
 
-  // Payment template form state
   const [paymentName, setPaymentName] = useState("");
-  const [paymentDefaultAmount, setPaymentDefaultAmount] = useState("");
-  const [paymentDefaultDate, setPaymentDefaultDate] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState("");
 
-  // Income template form state
   const [incomeName, setIncomeName] = useState("");
-  const [incomeDefaultAmount, setIncomeDefaultAmount] = useState("");
-  const [incomeDefaultDate, setIncomeDefaultDate] = useState("");
+  const [incomeAmount, setIncomeAmount] = useState("");
+  const [incomeDate, setIncomeDate] = useState("");
 
   const resetForms = () => {
     setPaymentName("");
-    setPaymentDefaultAmount("");
-    setPaymentDefaultDate("");
+    setPaymentAmount("");
+    setPaymentDate("");
     setIncomeName("");
-    setIncomeDefaultAmount("");
-    setIncomeDefaultDate("");
+    setIncomeAmount("");
+    setIncomeDate("");
   };
 
-  const handleAddPaymentTemplate = async () => {
+  const handleAddPayment = async () => {
     if (!paymentName || !session?.user?.id) return;
     setIsSubmitting(true);
     try {
-      // テンプレートを作成
-      const templateRes = await client.api[
-        "monthly-records"
-      ].templates.payment.$post({
+      const res = await client.api["monthly-records"].payment.$post({
         json: {
           userId: session.user.id,
+          month,
           name: paymentName,
-          defaultAmount: paymentDefaultAmount
-            ? parseInt(paymentDefaultAmount, 10)
-            : null,
-          defaultPaymentDate: paymentDefaultDate || null,
+          amount: paymentAmount ? parseInt(paymentAmount, 10) : 0,
+          paymentDate: paymentDate || null,
+          isPaid: false,
         },
       });
-      if (templateRes.ok) {
-        // 現在の月にもレコードを追加
-        await client.api["monthly-records"].payment.$post({
-          json: {
-            userId: session.user.id,
-            month,
-            name: paymentName,
-            amount: paymentDefaultAmount
-              ? parseInt(paymentDefaultAmount, 10)
-              : 0,
-            paymentDate: paymentDefaultDate,
-            isPaid: false,
-          },
-        });
+      if (res.ok) {
         toast.success("支出項目を追加しました");
         resetForms();
         setOpen(false);
@@ -94,34 +76,20 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
     }
   };
 
-  const handleAddIncomeTemplate = async () => {
+  const handleAddIncome = async () => {
     if (!incomeName || !session?.user?.id) return;
     setIsSubmitting(true);
     try {
-      // テンプレートを作成
-      const templateRes = await client.api[
-        "monthly-records"
-      ].templates.income.$post({
+      const res = await client.api["monthly-records"].income.$post({
         json: {
           userId: session.user.id,
+          month,
           name: incomeName,
-          defaultAmount: incomeDefaultAmount
-            ? parseInt(incomeDefaultAmount, 10)
-            : null,
-          defaultDate: incomeDefaultDate || null,
+          amount: incomeAmount ? parseInt(incomeAmount, 10) : 0,
+          date: incomeDate || null,
         },
       });
-      if (templateRes.ok) {
-        // 現在の月にもレコードを追加
-        await client.api["monthly-records"].income.$post({
-          json: {
-            userId: session.user.id,
-            month,
-            name: incomeName,
-            amount: incomeDefaultAmount ? parseInt(incomeDefaultAmount, 10) : 0,
-            date: incomeDefaultDate,
-          },
-        });
+      if (res.ok) {
         toast.success("収入項目を追加しました");
         resetForms();
         setOpen(false);
@@ -148,7 +116,8 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
         <DialogHeader>
           <DialogTitle>項目を追加</DialogTitle>
           <DialogDescription>
-            新しい項目を追加します。追加した項目は毎月自動で表示されます。
+            {month}{" "}
+            の明細に新しい項目を追加します。一回限りの支払いや、毎月の固定費以外を登録するのに便利です。
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="payment" className="w-full">
@@ -161,40 +130,41 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
               <Label htmlFor="payment-name">項目名 *</Label>
               <Input
                 id="payment-name"
-                placeholder="例: 楽天カード"
+                placeholder="例: カフェ代"
                 value={paymentName}
                 onChange={(e) => setPaymentName(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="payment-default-amount">
-                デフォルト金額（任意）
-              </Label>
+              <Label htmlFor="payment-amount">金額（任意）</Label>
               <Input
-                id="payment-default-amount"
-                type="number"
-                placeholder="毎月同じ金額の場合に設定"
-                value={paymentDefaultAmount}
-                onChange={(e) => setPaymentDefaultAmount(e.target.value)}
+                id="payment-amount"
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={
+                  paymentAmount ? Number(paymentAmount).toLocaleString() : ""
+                }
+                onChange={(e) =>
+                  setPaymentAmount(e.target.value.replace(/[^\d]/g, ""))
+                }
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="payment-default-date">
-                デフォルト支払日（任意）
-              </Label>
+              <Label htmlFor="payment-date">支払日（任意）</Label>
               <Input
-                id="payment-default-date"
-                placeholder="例: 27"
-                value={paymentDefaultDate}
-                onChange={(e) => setPaymentDefaultDate(e.target.value)}
+                id="payment-date"
+                placeholder="例: 10/27"
+                value={paymentDate}
+                onChange={(e) => setPaymentDate(e.target.value)}
               />
             </div>
             <DialogFooter>
               <Button
-                onClick={handleAddPaymentTemplate}
+                onClick={handleAddPayment}
                 disabled={isSubmitting || !paymentName}
               >
-                {isSubmitting ? "追加中..." : "支出項目を追加"}
+                {isSubmitting ? "追加中..." : "支出を追加"}
               </Button>
             </DialogFooter>
           </TabsContent>
@@ -203,40 +173,41 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
               <Label htmlFor="income-name">項目名 *</Label>
               <Input
                 id="income-name"
-                placeholder="例: 給与"
+                placeholder="例: お祝い"
                 value={incomeName}
                 onChange={(e) => setIncomeName(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="income-default-amount">
-                デフォルト金額（任意）
-              </Label>
+              <Label htmlFor="income-amount">金額（任意）</Label>
               <Input
-                id="income-default-amount"
-                type="number"
-                placeholder="毎月同じ金額の場合に設定"
-                value={incomeDefaultAmount}
-                onChange={(e) => setIncomeDefaultAmount(e.target.value)}
+                id="income-amount"
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={
+                  incomeAmount ? Number(incomeAmount).toLocaleString() : ""
+                }
+                onChange={(e) =>
+                  setIncomeAmount(e.target.value.replace(/[^\d]/g, ""))
+                }
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="income-default-date">
-                デフォルト日付（任意）
-              </Label>
+              <Label htmlFor="income-date">日付（任意）</Label>
               <Input
-                id="income-default-date"
-                placeholder="例: 15"
-                value={incomeDefaultDate}
-                onChange={(e) => setIncomeDefaultDate(e.target.value)}
+                id="income-date"
+                placeholder="例: 10/15"
+                value={incomeDate}
+                onChange={(e) => setIncomeDate(e.target.value)}
               />
             </div>
             <DialogFooter>
               <Button
-                onClick={handleAddIncomeTemplate}
+                onClick={handleAddIncome}
                 disabled={isSubmitting || !incomeName}
               >
-                {isSubmitting ? "追加中..." : "収入項目を追加"}
+                {isSubmitting ? "追加中..." : "収入を追加"}
               </Button>
             </DialogFooter>
           </TabsContent>

@@ -17,7 +17,7 @@ export default function DashboardPage() {
       if (role === "admin") {
         router.replace("/dashboard/admin");
       } else {
-        router.replace("/dashboard/installments");
+        router.replace("/dashboard/fixed-costs");
       }
     } else {
       router.replace("/");

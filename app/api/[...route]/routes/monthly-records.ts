@@ -1,97 +1,48 @@
-import { zValidator } from "@hono/zod-validator";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, eq } from "drizzle-orm";
-import { Hono } from "hono";
-import { z } from "zod";
 import { db } from "@/db";
-import {
-  incomeItemTemplates,
-  paymentItemTemplates,
-} from "@/db/schemas/monthly-item-template";
+import { fixedCosts } from "@/db/schemas/fixed-cost";
 import { monthlyIncomes, monthlyPayments } from "@/db/schemas/monthly-record";
 
-// CSVのパースロジック
-const parseMonthlyCSV = (csvText: string, month: string, userId: string) => {
-  const lines = csvText.split(/\r?\n/);
-  const payments: (typeof monthlyPayments.$inferInsert)[] = [];
-  const incomes: (typeof monthlyIncomes.$inferInsert)[] = [];
+const MonthlyRecordSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  month: z.string(),
+  name: z.string(),
+  amount: z.union([z.number(), z.string()]),
+  paymentDate: z.string().nullable().optional(),
+  date: z.string().nullable().optional(),
+  isPaid: z.boolean().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 
-  let mode: "none" | "expenditure" | "income" = "none";
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    if (line.startsWith("支出")) {
-      mode = "expenditure";
-      i++; // ヘッダーをスキップ
-      continue;
-    }
-    if (line.startsWith("収入")) {
-      mode = "income";
-      i++; // ヘッダーをスキップ
-      continue;
-    }
-
-    const cols = line.split(",").map((c) => c.replace(/"/g, "").trim());
-
-    if (mode === "expenditure") {
-      // 合計行や空の行を検知
-      if (cols[1] === "合計" || !cols[1]) {
-        mode = "none";
-        continue;
-      }
-      const paymentDate = cols[0];
-      const name = cols[1];
-      const amountStr = cols[2].replace(/[^\d]/g, "");
-      const isPaid = cols[3]?.toUpperCase() === "TRUE";
-
-      if (name && amountStr) {
-        payments.push({
-          userId,
-          month,
-          name,
-          amount: parseInt(amountStr, 10),
-          paymentDate,
-          isPaid,
-        });
-      }
-    } else if (mode === "income") {
-      if (cols[1] === "合計" || !cols[1]) {
-        mode = "none";
-        continue;
-      }
-      const date = cols[0];
-      const name = cols[1];
-      const amountStr = cols[2].replace(/[^\d]/g, "");
-
-      if (name && amountStr) {
-        incomes.push({
-          userId,
-          month,
-          name,
-          amount: parseInt(amountStr, 10),
-          date,
-        });
-      }
-    }
-  }
-
-  return { payments, incomes };
-};
-
-export const monthlyRecordsRoutes = new Hono()
-  .get(
-    "/monthly-records",
-    zValidator("query", z.object({ month: z.string() })),
+export const monthlyRecordsRoutes = new OpenAPIHono()
+  .openapi(
+    createRoute({
+      method: "get",
+      path: "/monthly-records",
+      request: {
+        query: z.object({
+          month: z.string().regex(/^\d{4}-\d{2}$/),
+        }),
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                payments: z.array(MonthlyRecordSchema),
+                incomes: z.array(MonthlyRecordSchema),
+              }),
+            },
+          },
+          description: "Monthly records",
+        },
+      },
+    }),
     async (c) => {
       const { month } = c.req.valid("query");
-      // TODO: 本来的には auth middleware で userId を取得すべきだが、
-      // 既存の installments.ts に倣い、一旦固定 or クエリにするか検討。
-      // ここでは、一旦全てのユーザーを取得する形にし、フロントで制御するか、
-      // ダミーの userId (後で本番用に修正) を使用する。
-      // 他のファイルを確認したところ、userId は auth から取得しているようなので、
-      // 後ほど auth 連携を確認する。
-
       const payments = await db
         .select()
         .from(monthlyPayments)
@@ -100,142 +51,227 @@ export const monthlyRecordsRoutes = new Hono()
         .select()
         .from(monthlyIncomes)
         .where(eq(monthlyIncomes.month, month));
-
-      return c.json({ payments, incomes });
-    },
-  )
-  .post(
-    "/monthly-records/import",
-    zValidator(
-      "json",
-      z.object({
-        csvText: z.string(),
-        month: z.string(),
-        userId: z.string(),
-      }),
-    ),
-    async (c) => {
-      const { csvText, month, userId } = c.req.valid("json");
-      const { payments, incomes } = parseMonthlyCSV(csvText, month, userId);
-
-      // トランザクションで既存のその月のデータを消してから入れるか、追加するか
-      // ユーザーの利便性を考え、一旦既存のその月のデータを削除してからインポートする
-      await db.transaction(async (tx) => {
-        await tx
-          .delete(monthlyPayments)
-          .where(
-            and(
-              eq(monthlyPayments.month, month),
-              eq(monthlyPayments.userId, userId),
-            ),
-          );
-        await tx
-          .delete(monthlyIncomes)
-          .where(
-            and(
-              eq(monthlyIncomes.month, month),
-              eq(monthlyIncomes.userId, userId),
-            ),
-          );
-
-        if (payments.length > 0) {
-          await tx.insert(monthlyPayments).values(payments);
-        }
-        if (incomes.length > 0) {
-          await tx.insert(monthlyIncomes).values(incomes);
-        }
+      return c.json({
+        payments: payments.map((p) => ({ ...p, isPaid: !!p.isPaid })),
+        incomes: incomes.map((i) => ({ ...i })),
       });
-
-      return c.json({ success: true, count: payments.length + incomes.length });
     },
   )
-  .delete(
-    "/monthly-records/:type/:id",
-    zValidator(
-      "param",
-      z.object({
-        type: z.enum(["payment", "income"]),
-        id: z.string(),
-      }),
-    ),
+  // POST /monthly-records/payment - 単月の支出を追加
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/monthly-records/payment",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                userId: z.string(),
+                month: z.string().regex(/^\d{4}-\d{2}$/),
+                name: z.string(),
+                amount: z.number(),
+                paymentDate: z.string().nullable().optional(),
+                isPaid: z.boolean().optional(),
+              }),
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ success: z.boolean() }) },
+          },
+          description: "Payment added",
+        },
+      },
+    }),
     async (c) => {
-      const { type, id } = c.req.valid("param");
-      if (type === "payment") {
-        await db.delete(monthlyPayments).where(eq(monthlyPayments.id, id));
-      } else {
-        await db.delete(monthlyIncomes).where(eq(monthlyIncomes.id, id));
-      }
+      const values = c.req.valid("json");
+      await db.insert(monthlyPayments).values(values);
       return c.json({ success: true });
     },
   )
-  // 支出の手動追加
-  .post(
-    "/monthly-records/payment",
-    zValidator(
-      "json",
-      z.object({
-        userId: z.string(),
-        month: z.string(),
-        name: z.string(),
-        amount: z.number(),
-        paymentDate: z.string().optional(),
-        isPaid: z.boolean().optional(),
-      }),
-    ),
+  // POST /monthly-records/income - 単月の収入を追加
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/monthly-records/income",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                userId: z.string(),
+                month: z.string().regex(/^\d{4}-\d{2}$/),
+                name: z.string(),
+                amount: z.number(),
+                date: z.string().nullable().optional(),
+              }),
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ success: z.boolean() }) },
+          },
+          description: "Income added",
+        },
+      },
+    }),
     async (c) => {
-      const data = c.req.valid("json");
-      const result = await db
-        .insert(monthlyPayments)
-        .values({
-          userId: data.userId,
-          month: data.month,
-          name: data.name,
-          amount: data.amount,
-          paymentDate: data.paymentDate ?? "",
-          isPaid: data.isPaid ?? false,
-        })
-        .returning();
-      return c.json({ success: true, data: result[0] });
+      const values = c.req.valid("json");
+      await db.insert(monthlyIncomes).values(values);
+      return c.json({ success: true });
     },
   )
-  // 収入の手動追加
-  .post(
-    "/monthly-records/income",
-    zValidator(
-      "json",
-      z.object({
-        userId: z.string(),
-        month: z.string(),
-        name: z.string(),
-        amount: z.number(),
-        date: z.string().optional(),
-      }),
-    ),
+  // POST /monthly-records/generate - 固定費から月次明細を生成Route({
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/monthly-records/generate",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                userId: z.string(),
+                month: z.string().regex(/^\d{4}-\d{2}$/),
+              }),
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                success: z.boolean(),
+                generated: z.object({
+                  payments: z.number(),
+                  incomes: z.number(),
+                }),
+              }),
+            },
+          },
+          description: "Generation result",
+        },
+      },
+    }),
     async (c) => {
-      const data = c.req.valid("json");
-      const result = await db
-        .insert(monthlyIncomes)
-        .values({
-          userId: data.userId,
-          month: data.month,
-          name: data.name,
-          amount: data.amount,
-          date: data.date ?? "",
-        })
-        .returning();
-      return c.json({ success: true, data: result[0] });
+      const { userId, month } = c.req.valid("json");
+
+      // 固定費一覧を取得
+      const allFixedCosts = await db
+        .select()
+        .from(fixedCosts)
+        .where(eq(fixedCosts.userId, userId));
+
+      let totalAmount = 0;
+      const [year, monthNum] = month.split("-").map(Number);
+      const targetDate = new Date(year, monthNum - 1, 1);
+
+      for (const fc of allFixedCosts) {
+        const [startYear, startMonth] = fc.startDate.split("-").map(Number);
+        const startDate = new Date(startYear, startMonth - 1, 1);
+        if (targetDate < startDate) continue;
+
+        const monthsDiff =
+          (targetDate.getFullYear() - startDate.getFullYear()) * 12 +
+          (targetDate.getMonth() - startDate.getMonth()) +
+          1;
+        if (fc.totalPayments !== null && monthsDiff > Number(fc.totalPayments))
+          continue;
+
+        totalAmount += Number(fc.amountPerPayment);
+      }
+
+      if (totalAmount === 0) {
+        return c.json({
+          success: true,
+          generated: { payments: 0, incomes: 0 },
+        });
+      }
+
+      // 「固定費」という名前の既存レコードを確認
+      const [existingPayment] = await db
+        .select()
+        .from(monthlyPayments)
+        .where(
+          and(
+            eq(monthlyPayments.userId, userId),
+            eq(monthlyPayments.month, month),
+            eq(monthlyPayments.name, "固定費"),
+          ),
+        )
+        .limit(1);
+
+      if (existingPayment) {
+        // 既存があれば金額を更新
+        await db
+          .update(monthlyPayments)
+          .set({ amount: totalAmount })
+          .where(eq(monthlyPayments.id, existingPayment.id));
+      } else {
+        // なければ新規作成
+        await db.insert(monthlyPayments).values({
+          userId,
+          month,
+          name: "固定費",
+          amount: totalAmount,
+          isPaid: false,
+          paymentDate: "",
+        });
+      }
+
+      return c.json({
+        success: true,
+        generated: { payments: existingPayment ? 0 : 1, incomes: 0 },
+      });
     },
   )
-  // CSVエクスポート
-  .get(
-    "/monthly-records/export",
-    zValidator(
-      "query",
-      z.object({
-        month: z.string(),
-        userId: z.string(),
-      }),
-    ),
+  .openapi(
+    createRoute({
+      method: "get",
+      path: "/monthly-records/template",
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ csv: z.string() }) },
+          },
+          description: "Template CSV",
+        },
+      },
+    }),
+    async (c) => {
+      const headers = ["type", "name", "amount", "date"];
+      const csv = `${headers.join(",")}\npayment,家賃,50000,27\nincome,給与,250000,25\n`;
+      return c.json({ csv });
+    },
+  )
+  .openapi(
+    createRoute({
+      method: "get",
+      path: "/monthly-records/export",
+      request: {
+        query: z.object({
+          month: z.string().regex(/^\d{4}-\d{2}$/),
+          userId: z.string(),
+        }),
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ csv: z.string() }) },
+          },
+          description: "Export CSV",
+        },
+      },
+    }),
     async (c) => {
       const { month, userId } = c.req.valid("query");
       const payments = await db
@@ -243,8 +279,8 @@ export const monthlyRecordsRoutes = new Hono()
         .from(monthlyPayments)
         .where(
           and(
-            eq(monthlyPayments.month, month),
             eq(monthlyPayments.userId, userId),
+            eq(monthlyPayments.month, month),
           ),
         );
       const incomes = await db
@@ -252,330 +288,228 @@ export const monthlyRecordsRoutes = new Hono()
         .from(monthlyIncomes)
         .where(
           and(
-            eq(monthlyIncomes.month, month),
             eq(monthlyIncomes.userId, userId),
+            eq(monthlyIncomes.month, month),
           ),
         );
 
-      // CSV生成
-      let csv = "支出\r\n";
-      csv += "支払日,項目名,金額,支払済み\r\n";
-      for (const p of payments) {
-        csv += `${p.paymentDate ?? ""},${p.name},${p.amount},${p.isPaid ? "TRUE" : "FALSE"}\r\n`;
-      }
-      const totalPayments = payments.reduce((acc, p) => acc + p.amount, 0);
-      csv += `,合計,${totalPayments},\r\n`;
-      csv += "\r\n";
-      csv += "収入\r\n";
-      csv += "日付,項目名,金額\r\n";
-      for (const i of incomes) {
-        csv += `${i.date ?? ""},${i.name},${i.amount}\r\n`;
-      }
-      const totalIncomes = incomes.reduce((acc, i) => acc + i.amount, 0);
-      csv += `,合計,${totalIncomes}\r\n`;
+      const headers = ["type", "name", "amount", "date", "isPaid"];
+      const rows = [headers.join(",")];
+      payments.forEach((p) => {
+        rows.push(
+          `payment,"${p.name}",${p.amount},"${p.paymentDate}",${p.isPaid}`,
+        );
+      });
+      incomes.forEach((i) => {
+        rows.push(`income,"${i.name}",${i.amount},"${i.date}",`);
+      });
+      return c.json({ csv: rows.join("\n") });
+    },
+  )
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/monthly-records/import",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                csvText: z.string(),
+                month: z.string().regex(/^\d{4}-\d{2}$/),
+                userId: z.string(),
+              }),
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ success: z.boolean() }) },
+          },
+          description: "Import success",
+        },
+      },
+    }),
+    async (c) => {
+      const { csvText, month, userId } = c.req.valid("json");
+      await db
+        .delete(monthlyPayments)
+        .where(
+          and(
+            eq(monthlyPayments.userId, userId),
+            eq(monthlyPayments.month, month),
+          ),
+        );
+      await db
+        .delete(monthlyIncomes)
+        .where(
+          and(
+            eq(monthlyIncomes.userId, userId),
+            eq(monthlyIncomes.month, month),
+          ),
+        );
 
-      return c.json({ csv });
-    },
-  )
-  // テンプレートCSV
-  .get("/monthly-records/template", (c) => {
-    const template = `支出\r
-支払日,項目名,金額,支払済み\r
-10/27,楽天カード,10000,TRUE\r
-10/27,光熱費,5000,FALSE\r
-,合計,,\r
-\r
-収入\r
-日付,項目名,金額\r
-10/15,給与,200000\r
-,合計,\r
-`;
-    return c.json({ csv: template });
-  })
-  // 支出の編集
-  .patch(
-    "/monthly-records/payment/:id",
-    zValidator("param", z.object({ id: z.string() })),
-    zValidator(
-      "json",
-      z.object({
-        name: z.string().optional(),
-        amount: z.number().optional(),
-        paymentDate: z.string().optional(),
-        isPaid: z.boolean().optional(),
-      }),
-    ),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const data = c.req.valid("json");
-      const result = await db
-        .update(monthlyPayments)
-        .set({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(monthlyPayments.id, id))
-        .returning();
-      return c.json({ success: true, data: result[0] });
-    },
-  )
-  // 収入の編集
-  .patch(
-    "/monthly-records/income/:id",
-    zValidator("param", z.object({ id: z.string() })),
-    zValidator(
-      "json",
-      z.object({
-        name: z.string().optional(),
-        amount: z.number().optional(),
-        date: z.string().optional(),
-      }),
-    ),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const data = c.req.valid("json");
-      const result = await db
-        .update(monthlyIncomes)
-        .set({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(monthlyIncomes.id, id))
-        .returning();
-      return c.json({ success: true, data: result[0] });
-    },
-  )
-  // 支払済みトグル
-  .patch(
-    "/monthly-records/payment/:id/toggle-paid",
-    zValidator("param", z.object({ id: z.string() })),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      // 現在の状態を取得
-      const current = await db
-        .select()
-        .from(monthlyPayments)
-        .where(eq(monthlyPayments.id, id))
-        .limit(1);
-      if (current.length === 0) {
-        return c.json({ success: false, error: "Not found" }, 404);
-      }
-      const result = await db
-        .update(monthlyPayments)
-        .set({
-          isPaid: !current[0].isPaid,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(monthlyPayments.id, id))
-        .returning();
-      return c.json({ success: true, data: result[0] });
-    },
-  )
-  // ========== テンプレート関連 ==========
-  // テンプレート一覧取得
-  .get(
-    "/monthly-records/templates",
-    zValidator("query", z.object({ userId: z.string() })),
-    async (c) => {
-      const { userId } = c.req.valid("query");
-      const payments = await db
-        .select()
-        .from(paymentItemTemplates)
-        .where(
-          and(
-            eq(paymentItemTemplates.userId, userId),
-            eq(paymentItemTemplates.isActive, true),
-          ),
-        );
-      const incomes = await db
-        .select()
-        .from(incomeItemTemplates)
-        .where(
-          and(
-            eq(incomeItemTemplates.userId, userId),
-            eq(incomeItemTemplates.isActive, true),
-          ),
-        );
-      return c.json({ payments, incomes });
-    },
-  )
-  // 支出テンプレート追加
-  .post(
-    "/monthly-records/templates/payment",
-    zValidator(
-      "json",
-      z.object({
-        userId: z.string(),
-        name: z.string(),
-        defaultAmount: z.number().nullable().optional(),
-        defaultPaymentDate: z.string().nullable().optional(),
-      }),
-    ),
-    async (c) => {
-      const data = c.req.valid("json");
-      const result = await db
-        .insert(paymentItemTemplates)
-        .values({
-          userId: data.userId,
-          name: data.name,
-          defaultAmount: data.defaultAmount ?? null,
-          defaultPaymentDate: data.defaultPaymentDate ?? null,
-        })
-        .returning();
-      return c.json({ success: true, data: result[0] });
-    },
-  )
-  // 収入テンプレート追加
-  .post(
-    "/monthly-records/templates/income",
-    zValidator(
-      "json",
-      z.object({
-        userId: z.string(),
-        name: z.string(),
-        defaultAmount: z.number().nullable().optional(),
-        defaultDate: z.string().nullable().optional(),
-      }),
-    ),
-    async (c) => {
-      const data = c.req.valid("json");
-      const result = await db
-        .insert(incomeItemTemplates)
-        .values({
-          userId: data.userId,
-          name: data.name,
-          defaultAmount: data.defaultAmount ?? null,
-          defaultDate: data.defaultDate ?? null,
-        })
-        .returning();
-      return c.json({ success: true, data: result[0] });
-    },
-  )
-  // テンプレート削除（論理削除）
-  .delete(
-    "/monthly-records/templates/:type/:id",
-    zValidator(
-      "param",
-      z.object({
-        type: z.enum(["payment", "income"]),
-        id: z.string(),
-      }),
-    ),
-    async (c) => {
-      const { type, id } = c.req.valid("param");
-      if (type === "payment") {
-        await db
-          .update(paymentItemTemplates)
-          .set({ isActive: false })
-          .where(eq(paymentItemTemplates.id, id));
-      } else {
-        await db
-          .update(incomeItemTemplates)
-          .set({ isActive: false })
-          .where(eq(incomeItemTemplates.id, id));
+      const lines = csvText.trim().split("\n").slice(1);
+      for (const line of lines) {
+        const parts = line
+          .split(",")
+          .map((s: string) => s.trim().replace(/^"|"$/g, ""));
+        if (parts.length < 3) continue;
+        const [type, name, amount, date, isPaid] = parts;
+        if (type === "payment") {
+          await db.insert(monthlyPayments).values({
+            userId,
+            month,
+            name,
+            amount: Number(amount),
+            paymentDate: date || "",
+            isPaid: isPaid === "true",
+          });
+        } else if (type === "income") {
+          await db.insert(monthlyIncomes).values({
+            userId,
+            month,
+            name,
+            amount: Number(amount),
+            date: date || "",
+          });
+        }
       }
       return c.json({ success: true });
     },
   )
-  // 月別レコード自動生成（テンプレートから）
-  .post(
-    "/monthly-records/generate",
-    zValidator(
-      "json",
-      z.object({
-        userId: z.string(),
-        month: z.string(),
-      }),
-    ),
-    async (c) => {
-      const { userId, month } = c.req.valid("json");
-
-      // 既存のレコードを取得
-      const existingPayments = await db
-        .select()
-        .from(monthlyPayments)
-        .where(
-          and(
-            eq(monthlyPayments.month, month),
-            eq(monthlyPayments.userId, userId),
-          ),
-        );
-      const existingIncomes = await db
-        .select()
-        .from(monthlyIncomes)
-        .where(
-          and(
-            eq(monthlyIncomes.month, month),
-            eq(monthlyIncomes.userId, userId),
-          ),
-        );
-
-      // テンプレートを取得
-      const paymentTemplates = await db
-        .select()
-        .from(paymentItemTemplates)
-        .where(
-          and(
-            eq(paymentItemTemplates.userId, userId),
-            eq(paymentItemTemplates.isActive, true),
-          ),
-        );
-      const incomeTemplates = await db
-        .select()
-        .from(incomeItemTemplates)
-        .where(
-          and(
-            eq(incomeItemTemplates.userId, userId),
-            eq(incomeItemTemplates.isActive, true),
-          ),
-        );
-
-      // 既存のtemplateIdを取得
-      const existingPaymentTemplateIds = new Set(
-        existingPayments.map((p) => p.templateId).filter(Boolean),
-      );
-      const existingIncomeTemplateIds = new Set(
-        existingIncomes.map((i) => i.templateId).filter(Boolean),
-      );
-
-      // 新しいレコードを作成（既にテンプレートから生成されていないもののみ）
-      const newPayments = paymentTemplates
-        .filter((t) => !existingPaymentTemplateIds.has(t.id))
-        .map((t) => ({
-          userId,
-          month,
-          name: t.name,
-          amount: t.defaultAmount ?? 0,
-          paymentDate: t.defaultPaymentDate ?? "",
-          isPaid: false,
-          templateId: t.id,
-        }));
-
-      const newIncomes = incomeTemplates
-        .filter((t) => !existingIncomeTemplateIds.has(t.id))
-        .map((t) => ({
-          userId,
-          month,
-          name: t.name,
-          amount: t.defaultAmount ?? 0,
-          date: t.defaultDate ?? "",
-          templateId: t.id,
-        }));
-
-      // 挿入
-      if (newPayments.length > 0) {
-        await db.insert(monthlyPayments).values(newPayments);
-      }
-      if (newIncomes.length > 0) {
-        await db.insert(monthlyIncomes).values(newIncomes);
-      }
-
-      return c.json({
-        success: true,
-        generated: {
-          payments: newPayments.length,
-          incomes: newIncomes.length,
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/monthly-records/bulk-delete",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                items: z.array(
+                  z.object({
+                    type: z.enum(["payment", "income"]),
+                    id: z.string(),
+                  }),
+                ),
+              }),
+            },
+          },
         },
-      });
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ success: z.boolean() }) },
+          },
+          description: "Bulk delete success",
+        },
+      },
+    }),
+    async (c) => {
+      const { items } = c.req.valid("json");
+      for (const item of items) {
+        if (item.type === "payment")
+          await db
+            .delete(monthlyPayments)
+            .where(eq(monthlyPayments.id, item.id));
+        else
+          await db.delete(monthlyIncomes).where(eq(monthlyIncomes.id, item.id));
+      }
+      return c.json({ success: true });
     },
-  );
+  )
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/monthly-records/bulk-set-paid",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                ids: z.array(z.string()),
+              }),
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ success: z.boolean() }) },
+          },
+          description: "Bulk set paid success",
+        },
+      },
+    }),
+    async (c) => {
+      const { ids } = c.req.valid("json");
+      for (const id of ids) {
+        await db
+          .update(monthlyPayments)
+          .set({ isPaid: true })
+          .where(eq(monthlyPayments.id, id));
+      }
+      return c.json({ success: true });
+    },
+  )
+  .openapi(
+    createRoute({
+      method: "delete",
+      path: "/monthly-records/{type}/{id}",
+      request: {
+        params: z.object({
+          type: z.enum(["payment", "income"]),
+          id: z.string(),
+        }),
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: z.object({ success: z.boolean() }) },
+          },
+          description: "Delete success",
+        },
+      },
+    }),
+    async (c) => {
+      const { type, id } = c.req.valid("param");
+      if (type === "payment")
+        await db.delete(monthlyPayments).where(eq(monthlyPayments.id, id));
+      else await db.delete(monthlyIncomes).where(eq(monthlyIncomes.id, id));
+      return c.json({ success: true });
+    },
+  )
+  .patch("/payment/:id/toggle-paid", async (c) => {
+    const id = c.req.param("id");
+    const [existing] = await db
+      .select()
+      .from(monthlyPayments)
+      .where(eq(monthlyPayments.id, id))
+      .limit(1);
+    if (!existing) return c.json({ error: "Not found" }, 404);
+    await db
+      .update(monthlyPayments)
+      .set({ isPaid: !existing.isPaid })
+      .where(eq(monthlyPayments.id, id));
+    return c.json({ success: true });
+  })
+  .patch("/payment/:id", async (c) => {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    await db
+      .update(monthlyPayments)
+      .set(body)
+      .where(eq(monthlyPayments.id, id));
+    return c.json({ success: true });
+  })
+  .patch("/income/:id", async (c) => {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    await db.update(monthlyIncomes).set(body).where(eq(monthlyIncomes.id, id));
+    return c.json({ success: true });
+  });
