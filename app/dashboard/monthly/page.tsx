@@ -194,16 +194,14 @@ export default function MonthlyPage() {
   const fetchRecords = useCallback(async () => {
     setIsLoading(true);
     try {
-      await client.api["monthly-records"].generate.$post({
-        json: { userId: session?.user?.id ?? "", month: monthStr },
-      });
-
       const res = await client.api["monthly-records"].$get({
         query: { month: monthStr },
       });
       if (res.ok) {
         const data = await res.json();
-        const payments = data.payments as MonthlyPayment[];
+        const payments = (data.payments as MonthlyPayment[]).filter(
+          (p) => p.name !== "固定費",
+        );
         setRecords({ payments, incomes: data.incomes as MonthlyIncome[] });
       }
     } catch (error) {
@@ -211,7 +209,7 @@ export default function MonthlyPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [monthStr, session?.user?.id]);
+  }, [monthStr]);
 
   useEffect(() => {
     fetchRecords();
