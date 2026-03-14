@@ -225,11 +225,18 @@ export default function MonthlyPage() {
   const sortedPayments = useMemo(() => {
     const sorted = [...records.payments];
     sorted.sort((a, b) => {
+      if (paymentSortKey === "paymentDate") {
+        const aEmpty = !a.paymentDate;
+        const bEmpty = !b.paymentDate;
+        if (aEmpty && bEmpty) return 0;
+        if (aEmpty) return 1;
+        if (bEmpty) return -1;
+        const comparison = Number(a.paymentDate) - Number(b.paymentDate);
+        return paymentSortDir === "asc" ? comparison : -comparison;
+      }
+
       let comparison = 0;
       switch (paymentSortKey) {
-        case "paymentDate":
-          comparison = (a.paymentDate ?? "").localeCompare(b.paymentDate ?? "");
-          break;
         case "name":
           comparison = a.name.localeCompare(b.name, "ja");
           break;
@@ -248,11 +255,18 @@ export default function MonthlyPage() {
   const sortedIncomes = useMemo(() => {
     const sorted = [...records.incomes];
     sorted.sort((a, b) => {
+      if (incomeSortKey === "date") {
+        const aEmpty = !a.date;
+        const bEmpty = !b.date;
+        if (aEmpty && bEmpty) return 0;
+        if (aEmpty) return 1;
+        if (bEmpty) return -1;
+        const comparison = Number(a.date) - Number(b.date);
+        return incomeSortDir === "asc" ? comparison : -comparison;
+      }
+
       let comparison = 0;
       switch (incomeSortKey) {
-        case "date":
-          comparison = (a.date ?? "").localeCompare(b.date ?? "");
-          break;
         case "name":
           comparison = a.name.localeCompare(b.name, "ja");
           break;
@@ -468,7 +482,11 @@ export default function MonthlyPage() {
     (acc, i) => acc + Number(i.amount),
     0,
   );
-  const remaining = totalIncomes - totalPayments;
+  const paidPayments = records.payments
+    .filter((p) => p.isPaid)
+    .reduce((acc, p) => acc + Number(p.amount), 0);
+  const remaining = totalIncomes - paidPayments;
+  const unpaidPayments = totalPayments - paidPayments;
 
   if (isLoading) {
     return (
@@ -523,6 +541,14 @@ export default function MonthlyPage() {
                   className={`text-lg md:text-2xl lg:text-3xl font-bold tracking-tight ${remaining < 0 ? "text-destructive" : "bg-linear-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent"}`}
                 >
                   ¥{remaining.toLocaleString()}
+                </p>
+              </div>
+              <div className="relative flex flex-col p-3 md:p-4 rounded-xl bg-linear-to-br from-amber-500/10 via-yellow-500/5 to-transparent border border-amber-500/10">
+                <p className="text-[10px] md:text-xs text-muted-foreground font-medium mb-0.5">
+                  残りの支出
+                </p>
+                <p className="text-lg md:text-2xl lg:text-3xl font-bold tracking-tight bg-linear-to-r from-amber-400 to-yellow-400 bg-clip-text text-transparent">
+                  ¥{unpaidPayments.toLocaleString()}
                 </p>
               </div>
             </div>

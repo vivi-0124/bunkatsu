@@ -78,13 +78,17 @@ export function RecordList({
 
   const totalPayments = payments.reduce((acc, p) => acc + p.amount, 0);
   const totalIncomes = incomes.reduce((acc, i) => acc + i.amount, 0);
-  const remaining = totalIncomes - totalPayments;
+  const paidPayments = payments
+    .filter((p) => p.isPaid)
+    .reduce((acc, p) => acc + p.amount, 0);
+  const remaining = totalIncomes - paidPayments;
+  const unpaidPayments = totalPayments - paidPayments;
 
   return (
     <>
       <div className="grid gap-6">
         {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>収入合計</CardDescription>
@@ -108,6 +112,14 @@ export function RecordList({
                 className={`text-2xl ${remaining < 0 ? "text-destructive" : ""}`}
               >
                 ¥{remaining.toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>残りの支出</CardDescription>
+              <CardTitle className="text-2xl">
+                ¥{unpaidPayments.toLocaleString()}
               </CardTitle>
             </CardHeader>
           </Card>
