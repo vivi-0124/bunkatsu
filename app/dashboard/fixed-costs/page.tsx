@@ -108,6 +108,7 @@ function normalizeFixedCost(item: FixedCostApiResponse): FixedCostRaw {
 interface FixedCostWithCalculated extends FixedCostRaw {
   currentPayment: number | null;
   isCompleted: boolean;
+  isStarted: boolean;
   endDate: string | null; // 完済予定月 (YYYY-MM形式)
 }
 
@@ -210,6 +211,7 @@ export default function FixedCostsPage() {
         item.totalPayments,
       );
       const endDate = calculateEndDate(item.startDate, item.totalPayments);
+      const currentMonth = getCurrentMonthString();
       return {
         ...item,
         currentPayment,
@@ -217,6 +219,7 @@ export default function FixedCostsPage() {
           item.totalPayments !== null &&
           currentPayment !== null &&
           currentPayment >= item.totalPayments,
+        isStarted: item.startDate <= currentMonth,
         endDate,
       };
     },
@@ -311,7 +314,7 @@ export default function FixedCostsPage() {
   };
 
   const activeFixedCosts = fixedCostsCalculated.filter(
-    (item) => !item.isCompleted,
+    (item) => !item.isCompleted && item.isStarted,
   );
 
   const fetchFixedCosts = useCallback(async () => {
@@ -510,7 +513,11 @@ export default function FixedCostsPage() {
     0,
   );
 
-  const totalRemaining = activeFixedCosts.reduce((sum, item) => {
+  const remainingCosts = fixedCostsCalculated.filter(
+    (item) => !item.isCompleted,
+  );
+
+  const totalRemaining = remainingCosts.reduce((sum, item) => {
     if (item.totalPayments === null) return sum;
     return (
       sum +
@@ -518,15 +525,39 @@ export default function FixedCostsPage() {
     );
   }, 0);
 
+  const finalEndDate = useMemo(() => {
+    const endDates: string[] = [];
+    for (const c of remainingCosts) {
+      if (c.endDate) endDates.push(c.endDate);
+    }
+    if (endDates.length === 0) return null;
+    return endDates.reduce((latest, current) =>
+      current > latest ? current : latest,
+    );
+  }, [remainingCosts]);
+
+  const notStartedCosts = fixedCostsCalculated.filter(
+    (item) => !item.isCompleted && !item.isStarted,
+  );
+
   const nextChangeDate = useMemo(() => {
-    const datedCosts = activeFixedCosts.filter((c) => c.endDate);
-    if (datedCosts.length === 0) return null;
-    return datedCosts.reduce((earliest, current) => {
-      return (current.endDate || "") < earliest
-        ? current.endDate || ""
-        : earliest;
-    }, datedCosts[0].endDate || "");
-  }, [activeFixedCosts]);
+    const changeDates: string[] = [];
+
+    // 開始済みアイテムの終了日（金額が減るタイミング）
+    for (const c of activeFixedCosts) {
+      if (c.endDate) changeDates.push(c.endDate);
+    }
+
+    // 開始前アイテムの開始日（金額が増えるタイミング）
+    for (const c of notStartedCosts) {
+      changeDates.push(c.startDate);
+    }
+
+    if (changeDates.length === 0) return null;
+    return changeDates.reduce((earliest, current) =>
+      current < earliest ? current : earliest,
+    );
+  }, [activeFixedCosts, notStartedCosts]);
 
   if (isPending || isLoading) {
     return (
@@ -554,7 +585,7 @@ export default function FixedCostsPage() {
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="container mx-auto px-2 py-2 max-w-7xl">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4 md:gap-8 px-1">
+            <div className="flex items-stretch gap-4 md:gap-8 px-1">
               <div className="relative flex flex-col p-4 rounded-xl bg-linear-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/10">
                 <p className="text-xs text-muted-foreground font-medium mb-1">
                   毎月の支払い総額
@@ -581,9 +612,23 @@ export default function FixedCostsPage() {
                 <p className="text-xs text-muted-foreground font-medium mb-1">
                   残りの支払い総額
                 </p>
-                <p className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
+                <p className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight bg-linear-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
                   ¥{totalRemaining.toLocaleString()}
                 </p>
+                {finalEndDate && (
+                  <p className="text-[10px] md:text-xs text-emerald-400 font-medium mt-1.5 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {format(
+                      new Date(
+                        Number(finalEndDate.split("-")[0]),
+                        Number(finalEndDate.split("-")[1]) - 1,
+                        1,
+                      ),
+                      "yyyy年MM月",
+                    )}
+                    まで
+                  </p>
+                )}
               </div>
             </div>
 
@@ -663,7 +708,7 @@ export default function FixedCostsPage() {
                     <div className="grid grid-cols-[3fr_7fr] gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="totalPayments">
-                          支払い回数（任意）
+                          支払い回数
                         </Label>
                         <Input
                           id="totalPayments"
@@ -683,7 +728,6 @@ export default function FixedCostsPage() {
                             setFormData((prev) => ({
                               ...prev,
                               totalPayments: val,
-                              // 総額があれば月額を再計算、なければ月額から総額を計算
                               amountPerPayment:
                                 total && payments
                                   ? String(Math.round(total / payments))
@@ -751,7 +795,7 @@ export default function FixedCostsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="amountPerPayment">金額（毎月）</Label>
+                        <Label htmlFor="amountPerPayment">金額</Label>
                         <Input
                           id="amountPerPayment"
                           type="text"
@@ -769,10 +813,17 @@ export default function FixedCostsPage() {
                             const payments = formData.totalPayments
                               ? Number(formData.totalPayments)
                               : null;
+                            const total = formData.totalAmount
+                              ? Number(formData.totalAmount)
+                              : null;
 
                             setFormData((prev) => ({
                               ...prev,
                               amountPerPayment: val,
+                              totalPayments:
+                                total && amount && !payments
+                                  ? String(Math.round(total / amount))
+                                  : prev.totalPayments,
                               totalAmount:
                                 payments && amount
                                   ? String(payments * amount)
@@ -780,11 +831,10 @@ export default function FixedCostsPage() {
                             }));
                           }}
                           placeholder="例: 1,000"
-                          required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="totalAmount">支払い総額（任意）</Label>
+                        <Label htmlFor="totalAmount">支払い総額</Label>
                         <Input
                           id="totalAmount"
                           type="text"
@@ -800,10 +850,17 @@ export default function FixedCostsPage() {
                             const payments = formData.totalPayments
                               ? Number(formData.totalPayments)
                               : null;
+                            const amount = formData.amountPerPayment
+                              ? Number(formData.amountPerPayment)
+                              : null;
 
                             setFormData((prev) => ({
                               ...prev,
                               totalAmount: val,
+                              totalPayments:
+                                amount && total && !payments
+                                  ? String(Math.round(total / amount))
+                                  : prev.totalPayments,
                               amountPerPayment:
                                 payments && total
                                   ? String(Math.round(total / payments))
@@ -964,9 +1021,10 @@ export default function FixedCostsPage() {
                   <Card
                     key={item.id}
                     className={cn(
-                      "overflow-hidden border-none bg-muted/30 shadow-none",
+                      "overflow-hidden border-none bg-muted/30 shadow-none cursor-pointer",
                       item.isCompleted && "opacity-60",
                     )}
+                    onClick={() => handleEdit(item)}
                   >
                     <CardContent className="p-4 space-y-4">
                       <div className="flex items-start justify-between gap-4">
@@ -978,12 +1036,23 @@ export default function FixedCostsPage() {
                             #{item.id.split("-")[0]}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <Badge
                             variant="secondary"
-                            className="bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 border-none px-2 h-6 text-[10px]"
+                            className={cn(
+                              "border-none px-2 h-6 text-[10px]",
+                              item.isCompleted
+                                ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                                : !item.isStarted
+                                  ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                                  : "bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20",
+                            )}
                           >
-                            {item.isCompleted ? "完済" : "支払い中"}
+                            {item.isCompleted
+                              ? "完済"
+                              : !item.isStarted
+                                ? "開始前"
+                                : "支払い中"}
                           </Badge>
                           <Button
                             variant="ghost"
@@ -1146,9 +1215,10 @@ export default function FixedCostsPage() {
                       <TableRow
                         key={item.id}
                         className={cn(
-                          "transition-colors duration-200 hover:bg-muted/40 group",
+                          "transition-colors duration-200 hover:bg-muted/40 cursor-pointer group",
                           item.isCompleted && "opacity-50",
                         )}
+                        onClick={() => handleEdit(item)}
                       >
                         <TableCell>
                           <div className="flex flex-col">
@@ -1163,6 +1233,10 @@ export default function FixedCostsPage() {
                             <Badge className="bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 border-none gap-1 font-medium">
                               <IconCheck className="h-3 w-3" />
                               完了
+                            </Badge>
+                          ) : !item.isStarted ? (
+                            <Badge className="bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 border-none font-medium">
+                              開始前
                             </Badge>
                           ) : (
                             <Badge className="bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border-none font-medium">
@@ -1226,7 +1300,7 @@ export default function FixedCostsPage() {
                         <TableCell className="text-sm">
                           {item.endDate || "—"}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
                               variant="ghost"

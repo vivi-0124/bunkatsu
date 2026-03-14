@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import * as authSchema from "./schemas/auth-schema";
 import * as fixedCostSchema from "./schemas/fixed-cost";
 import * as monthlyRecordSchema from "./schemas/monthly-record";
+import * as recurringItemSchema from "./schemas/recurring-item";
 
 const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -26,6 +27,7 @@ export const db = drizzle(client, {
     ...authSchema,
     ...fixedCostSchema,
     ...monthlyRecordSchema,
+    ...recurringItemSchema,
   },
   casing: "snake_case",
 });

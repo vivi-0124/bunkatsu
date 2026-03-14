@@ -9,7 +9,6 @@ import {
   IconChevronRight,
   IconDotsVertical,
   IconDownload,
-  IconEdit,
   IconFileTypeCsv,
   IconTrash,
   IconUpload,
@@ -115,6 +114,11 @@ export default function MonthlyPage() {
     type: "payment" | "income";
     id: string;
     name: string;
+    templateId?: string | null;
+  } | null>(null);
+
+  const [saveTarget, setSaveTarget] = useState<{
+    type: "payment" | "income";
   } | null>(null);
 
   const [selectedItems, setSelectedItems] = useState<
@@ -162,7 +166,7 @@ export default function MonthlyPage() {
         json: { ids: paymentIds },
       });
       if (res.ok) {
-        toast.success(`${paymentIds.length}件を支払済みに更新しました`);
+        toast.success(`${paymentIds.length}件の支払状態を更新しました`);
         setSelectedItems([]);
         fetchRecords();
       }
@@ -360,11 +364,14 @@ export default function MonthlyPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (
+    scope: "this_month" | "all_future" = "this_month",
+  ) => {
     if (!deleteTarget) return;
     try {
       const res = await client.api["monthly-records"][":type"][":id"].$delete({
         param: { type: deleteTarget.type, id: deleteTarget.id },
+        query: { scope },
       });
       if (res.ok) {
         toast.success("削除しました");
@@ -387,7 +394,9 @@ export default function MonthlyPage() {
     });
   };
 
-  const handleEditPaymentSubmit = async () => {
+  const handleEditPaymentSubmit = async (
+    scope: "this_month" | "all_future" = "this_month",
+  ) => {
     if (!editingPayment) return;
     try {
       const res = await fetch(
@@ -400,6 +409,7 @@ export default function MonthlyPage() {
             amount: Number(editPaymentForm.amount),
             paymentDate: editPaymentForm.paymentDate,
             isPaid: editPaymentForm.isPaid,
+            scope,
           }),
         },
       );
@@ -422,7 +432,9 @@ export default function MonthlyPage() {
     });
   };
 
-  const handleEditIncomeSubmit = async () => {
+  const handleEditIncomeSubmit = async (
+    scope: "this_month" | "all_future" = "this_month",
+  ) => {
     if (!editingIncome) return;
     try {
       const res = await fetch(
@@ -434,6 +446,7 @@ export default function MonthlyPage() {
             name: editIncomeForm.name,
             amount: Number(editIncomeForm.amount),
             date: editIncomeForm.date,
+            scope,
           }),
         },
       );
@@ -618,7 +631,7 @@ export default function MonthlyPage() {
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={handleBulkSetPaid}>
                   <IconCheck className="h-4 w-4 mr-2" />
-                  支払済みに更新
+                  支払状態を切り替え
                 </Button>
                 <Button
                   variant="destructive"
@@ -699,16 +712,16 @@ export default function MonthlyPage() {
                           />
                         </span>
                       </TableHead>
-                      <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedPayments.map((p) => (
                       <TableRow
                         key={p.id}
-                        className={`transition-colors duration-200 hover:bg-muted/40 group ${p.isPaid ? "opacity-50 bg-muted/20" : ""}`}
+                        className={`transition-colors duration-200 hover:bg-muted/40 cursor-pointer group ${p.isPaid ? "opacity-50 bg-muted/20" : ""}`}
+                        onClick={() => openEditPayment(p)}
                       >
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selectedItems.some(
                               (item) => item.id === p.id,
@@ -724,40 +737,6 @@ export default function MonthlyPage() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {p.paymentDate}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <IconDotsVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openEditPayment(p)}
-                              >
-                                <IconEdit className="h-4 w-4 mr-2" />
-                                編集
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() =>
-                                  setDeleteTarget({
-                                    type: "payment",
-                                    id: p.id,
-                                    name: p.name,
-                                  })
-                                }
-                              >
-                                <IconTrash className="h-4 w-4 mr-2" />
-                                削除
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -840,16 +819,16 @@ export default function MonthlyPage() {
                           />
                         </span>
                       </TableHead>
-                      <TableHead className="w-16"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedIncomes.map((i) => (
                       <TableRow
                         key={i.id}
-                        className="transition-colors duration-200 hover:bg-muted/40 group"
+                        className="transition-colors duration-200 hover:bg-muted/40 cursor-pointer group"
+                        onClick={() => openEditIncome(i)}
                       >
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selectedItems.some(
                               (item) => item.id === i.id,
@@ -865,40 +844,6 @@ export default function MonthlyPage() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {i.date}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <IconDotsVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openEditIncome(i)}
-                              >
-                                <IconEdit className="h-4 w-4 mr-2" />
-                                編集
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() =>
-                                  setDeleteTarget({
-                                    type: "income",
-                                    id: i.id,
-                                    name: i.name,
-                                  })
-                                }
-                              >
-                                <IconTrash className="h-4 w-4 mr-2" />
-                                削除
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -956,11 +901,67 @@ export default function MonthlyPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            {deleteTarget?.templateId ? (
+              <>
+                <AlertDialogAction
+                  onClick={() => handleDelete("this_month")}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  この月だけ削除
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={() => handleDelete("all_future")}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  これ以降もすべて削除
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                onClick={() => handleDelete("this_month")}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                削除
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!saveTarget}
+        onOpenChange={(open) => !open && setSaveTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>繰り返し項目の編集</AlertDialogTitle>
+            <AlertDialogDescription>
+              この項目は毎月繰り返す設定になっています。この変更をどのように適用しますか？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                if (saveTarget?.type === "payment")
+                  handleEditPaymentSubmit("this_month");
+                else handleEditIncomeSubmit("this_month");
+                setSaveTarget(null);
+              }}
+              className="bg-primary hover:bg-primary/90 text-white"
             >
-              削除
+              この月のみ
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                if (saveTarget?.type === "payment")
+                  handleEditPaymentSubmit("all_future");
+                else handleEditIncomeSubmit("all_future");
+                setSaveTarget(null);
+              }}
+              className="bg-primary hover:bg-primary/90"
+            >
+              これ以降もすべて
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1032,11 +1033,39 @@ export default function MonthlyPage() {
               <Label htmlFor="edit-payment-isPaid">支払済み</Label>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingPayment(null)}>
-              キャンセル
+          <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
+            <Button
+              variant="destructive"
+              type="button"
+              onClick={() => {
+                if (editingPayment) {
+                  setDeleteTarget({
+                    type: "payment",
+                    id: editingPayment.id,
+                    name: editingPayment.name,
+                    templateId: editingPayment.templateId,
+                  });
+                  setEditingPayment(null);
+                }
+              }}
+            >
+              <IconTrash className="h-4 w-4 mr-2" />
+              削除
             </Button>
-            <Button onClick={handleEditPaymentSubmit}>保存</Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setEditingPayment(null)}>
+                キャンセル
+              </Button>
+              {editingPayment?.templateId ? (
+                <Button onClick={() => setSaveTarget({ type: "payment" })}>
+                  保存
+                </Button>
+              ) : (
+                <Button onClick={() => handleEditPaymentSubmit("this_month")}>
+                  保存
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1091,11 +1120,39 @@ export default function MonthlyPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingIncome(null)}>
-              キャンセル
+          <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
+            <Button
+              variant="destructive"
+              type="button"
+              onClick={() => {
+                if (editingIncome) {
+                  setDeleteTarget({
+                    type: "income",
+                    id: editingIncome.id,
+                    name: editingIncome.name,
+                    templateId: editingIncome.templateId,
+                  });
+                  setEditingIncome(null);
+                }
+              }}
+            >
+              <IconTrash className="h-4 w-4 mr-2" />
+              削除
             </Button>
-            <Button onClick={handleEditIncomeSubmit}>保存</Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setEditingIncome(null)}>
+                キャンセル
+              </Button>
+              {editingIncome?.templateId ? (
+                <Button onClick={() => setSaveTarget({ type: "income" })}>
+                  保存
+                </Button>
+              ) : (
+                <Button onClick={() => handleEditIncomeSubmit("this_month")}>
+                  保存
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

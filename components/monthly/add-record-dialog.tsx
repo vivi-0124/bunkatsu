@@ -4,6 +4,7 @@ import { IconPlus } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -32,41 +33,68 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
   const [paymentName, setPaymentName] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [paymentRecurring, setPaymentRecurring] = useState(false);
 
   const [incomeName, setIncomeName] = useState("");
   const [incomeAmount, setIncomeAmount] = useState("");
   const [incomeDate, setIncomeDate] = useState("");
+  const [incomeRecurring, setIncomeRecurring] = useState(false);
 
   const resetForms = () => {
     setPaymentName("");
     setPaymentAmount("");
     setPaymentDate("");
+    setPaymentRecurring(false);
     setIncomeName("");
     setIncomeAmount("");
     setIncomeDate("");
+    setIncomeRecurring(false);
   };
 
   const handleAddPayment = async () => {
     if (!paymentName || !session?.user?.id) return;
     setIsSubmitting(true);
     try {
-      const res = await client.api["monthly-records"].payment.$post({
-        json: {
-          userId: session.user.id,
-          month,
-          name: paymentName,
-          amount: paymentAmount ? parseInt(paymentAmount, 10) : 0,
-          paymentDate: paymentDate || null,
-          isPaid: false,
-        },
-      });
-      if (res.ok) {
-        toast.success("支出項目を追加しました");
-        resetForms();
-        setOpen(false);
-        onSuccess();
+      if (paymentRecurring) {
+        // 繰り返し項目として登録（GETハンドラが自動で月次レコードを生成する）
+        const recurRes = await client.api["recurring-items"].$post({
+          json: {
+            userId: session.user.id,
+            name: paymentName,
+            amount: paymentAmount ? parseInt(paymentAmount, 10) : 0,
+            type: "payment" as const,
+            startMonth: month,
+            paymentDate: paymentDate || null,
+          },
+        });
+        if (recurRes.ok) {
+          toast.success("支出項目を追加しました（毎月繰り返し）");
+          resetForms();
+          setOpen(false);
+          onSuccess();
+        } else {
+          toast.error("追加に失敗しました");
+        }
       } else {
-        toast.error("追加に失敗しました");
+        // 通常の1回限り追加
+        const res = await client.api["monthly-records"].payment.$post({
+          json: {
+            userId: session.user.id,
+            month,
+            name: paymentName,
+            amount: paymentAmount ? parseInt(paymentAmount, 10) : 0,
+            paymentDate: paymentDate || null,
+            isPaid: false,
+          },
+        });
+        if (res.ok) {
+          toast.success("支出項目を追加しました");
+          resetForms();
+          setOpen(false);
+          onSuccess();
+        } else {
+          toast.error("追加に失敗しました");
+        }
       }
     } catch (error) {
       console.error(error);
@@ -80,22 +108,45 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
     if (!incomeName || !session?.user?.id) return;
     setIsSubmitting(true);
     try {
-      const res = await client.api["monthly-records"].income.$post({
-        json: {
-          userId: session.user.id,
-          month,
-          name: incomeName,
-          amount: incomeAmount ? parseInt(incomeAmount, 10) : 0,
-          date: incomeDate || null,
-        },
-      });
-      if (res.ok) {
-        toast.success("収入項目を追加しました");
-        resetForms();
-        setOpen(false);
-        onSuccess();
+      if (incomeRecurring) {
+        // 繰り返し項目として登録（GETハンドラが自動で月次レコードを生成する）
+        const recurRes = await client.api["recurring-items"].$post({
+          json: {
+            userId: session.user.id,
+            name: incomeName,
+            amount: incomeAmount ? parseInt(incomeAmount, 10) : 0,
+            type: "income" as const,
+            startMonth: month,
+            paymentDate: incomeDate || null,
+          },
+        });
+        if (recurRes.ok) {
+          toast.success("収入項目を追加しました（毎月繰り返し）");
+          resetForms();
+          setOpen(false);
+          onSuccess();
+        } else {
+          toast.error("追加に失敗しました");
+        }
       } else {
-        toast.error("追加に失敗しました");
+        // 通常の1回限り追加
+        const res = await client.api["monthly-records"].income.$post({
+          json: {
+            userId: session.user.id,
+            month,
+            name: incomeName,
+            amount: incomeAmount ? parseInt(incomeAmount, 10) : 0,
+            date: incomeDate || null,
+          },
+        });
+        if (res.ok) {
+          toast.success("収入項目を追加しました");
+          resetForms();
+          setOpen(false);
+          onSuccess();
+        } else {
+          toast.error("追加に失敗しました");
+        }
       }
     } catch (error) {
       console.error(error);
@@ -117,7 +168,7 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
           <DialogTitle>項目を追加</DialogTitle>
           <DialogDescription>
             {month}{" "}
-            の明細に新しい項目を追加します。一回限りの支払いや、毎月の固定費以外を登録するのに便利です。
+            の明細に新しい項目を追加します。「毎月繰り返す」にチェックすると、翌月以降も自動的に追加されます。
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="payment" className="w-full">
@@ -158,6 +209,21 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="payment-recurring"
+                checked={paymentRecurring}
+                onCheckedChange={(checked) =>
+                  setPaymentRecurring(checked === true)
+                }
+              />
+              <Label
+                htmlFor="payment-recurring"
+                className="text-sm font-normal cursor-pointer"
+              >
+                毎月繰り返す
+              </Label>
             </div>
             <DialogFooter>
               <Button
@@ -201,6 +267,21 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
                 value={incomeDate}
                 onChange={(e) => setIncomeDate(e.target.value)}
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="income-recurring"
+                checked={incomeRecurring}
+                onCheckedChange={(checked) =>
+                  setIncomeRecurring(checked === true)
+                }
+              />
+              <Label
+                htmlFor="income-recurring"
+                className="text-sm font-normal cursor-pointer"
+              >
+                毎月繰り返す
+              </Label>
             </div>
             <DialogFooter>
               <Button

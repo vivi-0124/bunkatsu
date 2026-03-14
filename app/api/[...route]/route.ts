@@ -3,6 +3,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { handle } from "hono/vercel";
 import { fixedCostsRoutes } from "./routes/fixed-costs";
 import { monthlyRecordsRoutes } from "./routes/monthly-records";
+import { recurringItemsRoutes } from "./routes/recurring-items";
 import { usersRoutes } from "./routes/users";
 
 const app = new OpenAPIHono().basePath("/api");
@@ -11,7 +12,8 @@ const app = new OpenAPIHono().basePath("/api");
 const routes = app
   .route("/", usersRoutes)
   .route("/", fixedCostsRoutes)
-  .route("/", monthlyRecordsRoutes);
+  .route("/", monthlyRecordsRoutes)
+  .route("/", recurringItemsRoutes);
 
 // The OpenAPI documentation will be available at /api/doc
 app.doc("/doc", {

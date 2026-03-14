@@ -1,0 +1,1 @@
+ALTER TABLE `recurring_items` ADD `start_month` text;
