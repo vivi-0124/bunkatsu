@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { and, eq, inArray, gte } from "drizzle-orm";
+import { and, eq, gte, inArray } from "drizzle-orm";
+
 import { db } from "@/db";
 import { fixedCosts } from "@/db/schemas/fixed-cost";
 import { monthlyIncomes, monthlyPayments } from "@/db/schemas/monthly-record";
@@ -128,8 +129,8 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
         .where(
           and(
             eq(monthlyPayments.month, month),
-            eq(monthlyPayments.isExcluded, false)
-          )
+            eq(monthlyPayments.isExcluded, false),
+          ),
         );
       const incomes = await db
         .select()
@@ -137,8 +138,8 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
         .where(
           and(
             eq(monthlyIncomes.month, month),
-            eq(monthlyIncomes.isExcluded, false)
-          )
+            eq(monthlyIncomes.isExcluded, false),
+          ),
         );
       return c.json({
         payments: payments.map((p) => ({ ...p, isPaid: !!p.isPaid })),
@@ -538,7 +539,10 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
     async (c) => {
       const { ids } = c.req.valid("json");
       for (const id of ids) {
-        const [record] = await db.select({ isPaid: monthlyPayments.isPaid }).from(monthlyPayments).where(eq(monthlyPayments.id, id));
+        const [record] = await db
+          .select({ isPaid: monthlyPayments.isPaid })
+          .from(monthlyPayments)
+          .where(eq(monthlyPayments.id, id));
         if (record) {
           await db
             .update(monthlyPayments)
@@ -576,25 +580,57 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
       const { scope = "this_month" } = c.req.valid("query");
 
       if (type === "payment") {
-        const [record] = await db.select().from(monthlyPayments).where(eq(monthlyPayments.id, id));
+        const [record] = await db
+          .select()
+          .from(monthlyPayments)
+          .where(eq(monthlyPayments.id, id));
         if (record) {
           if (record.templateId && scope === "all_future") {
-            await db.update(recurringItems).set({ isActive: false }).where(eq(recurringItems.id, record.templateId));
-            await db.delete(monthlyPayments).where(and(eq(monthlyPayments.templateId, record.templateId), gte(monthlyPayments.month, record.month)));
+            await db
+              .update(recurringItems)
+              .set({ isActive: false })
+              .where(eq(recurringItems.id, record.templateId));
+            await db
+              .delete(monthlyPayments)
+              .where(
+                and(
+                  eq(monthlyPayments.templateId, record.templateId),
+                  gte(monthlyPayments.month, record.month),
+                ),
+              );
           } else if (record.templateId) {
-            await db.update(monthlyPayments).set({ isExcluded: true }).where(eq(monthlyPayments.id, id));
+            await db
+              .update(monthlyPayments)
+              .set({ isExcluded: true })
+              .where(eq(monthlyPayments.id, id));
           } else {
             await db.delete(monthlyPayments).where(eq(monthlyPayments.id, id));
           }
         }
       } else {
-        const [record] = await db.select().from(monthlyIncomes).where(eq(monthlyIncomes.id, id));
+        const [record] = await db
+          .select()
+          .from(monthlyIncomes)
+          .where(eq(monthlyIncomes.id, id));
         if (record) {
           if (record.templateId && scope === "all_future") {
-            await db.update(recurringItems).set({ isActive: false }).where(eq(recurringItems.id, record.templateId));
-            await db.delete(monthlyIncomes).where(and(eq(monthlyIncomes.templateId, record.templateId), gte(monthlyIncomes.month, record.month)));
+            await db
+              .update(recurringItems)
+              .set({ isActive: false })
+              .where(eq(recurringItems.id, record.templateId));
+            await db
+              .delete(monthlyIncomes)
+              .where(
+                and(
+                  eq(monthlyIncomes.templateId, record.templateId),
+                  gte(monthlyIncomes.month, record.month),
+                ),
+              );
           } else if (record.templateId) {
-            await db.update(monthlyIncomes).set({ isExcluded: true }).where(eq(monthlyIncomes.id, id));
+            await db
+              .update(monthlyIncomes)
+              .set({ isExcluded: true })
+              .where(eq(monthlyIncomes.id, id));
           } else {
             await db.delete(monthlyIncomes).where(eq(monthlyIncomes.id, id));
           }
@@ -622,21 +658,35 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
     const { scope, ...body } = await c.req.json();
 
     if (scope === "all_future") {
-      const [record] = await db.select().from(monthlyPayments).where(eq(monthlyPayments.id, id));
+      const [record] = await db
+        .select()
+        .from(monthlyPayments)
+        .where(eq(monthlyPayments.id, id));
       if (record?.templateId) {
-        await db.update(recurringItems).set({
-          name: body.name ?? record.name,
-          amount: body.amount ?? record.amount,
-          paymentDate: body.paymentDate ?? record.paymentDate
-        }).where(eq(recurringItems.id, record.templateId));
-        await db.update(monthlyPayments).set({
-          name: body.name ?? record.name,
-          amount: body.amount ?? record.amount,
-          paymentDate: body.paymentDate ?? record.paymentDate
-        }).where(and(eq(monthlyPayments.templateId, record.templateId), gte(monthlyPayments.month, record.month)));
+        await db
+          .update(recurringItems)
+          .set({
+            name: body.name ?? record.name,
+            amount: body.amount ?? record.amount,
+            paymentDate: body.paymentDate ?? record.paymentDate,
+          })
+          .where(eq(recurringItems.id, record.templateId));
+        await db
+          .update(monthlyPayments)
+          .set({
+            name: body.name ?? record.name,
+            amount: body.amount ?? record.amount,
+            paymentDate: body.paymentDate ?? record.paymentDate,
+          })
+          .where(
+            and(
+              eq(monthlyPayments.templateId, record.templateId),
+              gte(monthlyPayments.month, record.month),
+            ),
+          );
       }
     }
-    
+
     await db
       .update(monthlyPayments)
       .set(body)
@@ -648,18 +698,32 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
     const { scope, ...body } = await c.req.json();
 
     if (scope === "all_future") {
-      const [record] = await db.select().from(monthlyIncomes).where(eq(monthlyIncomes.id, id));
+      const [record] = await db
+        .select()
+        .from(monthlyIncomes)
+        .where(eq(monthlyIncomes.id, id));
       if (record?.templateId) {
-        await db.update(recurringItems).set({
-          name: body.name ?? record.name,
-          amount: body.amount ?? record.amount,
-          paymentDate: body.date ?? record.date
-        }).where(eq(recurringItems.id, record.templateId));
-        await db.update(monthlyIncomes).set({
-          name: body.name ?? record.name,
-          amount: body.amount ?? record.amount,
-          date: body.date ?? record.date
-        }).where(and(eq(monthlyIncomes.templateId, record.templateId), gte(monthlyIncomes.month, record.month)));
+        await db
+          .update(recurringItems)
+          .set({
+            name: body.name ?? record.name,
+            amount: body.amount ?? record.amount,
+            paymentDate: body.date ?? record.date,
+          })
+          .where(eq(recurringItems.id, record.templateId));
+        await db
+          .update(monthlyIncomes)
+          .set({
+            name: body.name ?? record.name,
+            amount: body.amount ?? record.amount,
+            date: body.date ?? record.date,
+          })
+          .where(
+            and(
+              eq(monthlyIncomes.templateId, record.templateId),
+              gte(monthlyIncomes.month, record.month),
+            ),
+          );
       }
     }
 

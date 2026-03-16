@@ -707,9 +707,7 @@ export default function FixedCostsPage() {
                     </div>
                     <div className="grid grid-cols-[3fr_7fr] gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="totalPayments">
-                          支払い回数
-                        </Label>
+                        <Label htmlFor="totalPayments">支払い回数</Label>
                         <Input
                           id="totalPayments"
                           type="text"
@@ -1036,7 +1034,12 @@ export default function FixedCostsPage() {
                             #{item.id.split("-")[0]}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {/* biome-ignore lint/a11y/useKeyWithClickEvents: prevent card click */}
+                        {/* biome-ignore lint/a11y/noStaticElementInteractions: prevent card click */}
+                        <div
+                          className="flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Badge
                             variant="secondary"
                             className={cn(
@@ -1300,7 +1303,10 @@ export default function FixedCostsPage() {
                         <TableCell className="text-sm">
                           {item.endDate || "—"}
                         </TableCell>
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <TableCell
+                          className="text-right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
                               variant="ghost"
