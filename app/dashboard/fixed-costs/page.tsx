@@ -176,7 +176,7 @@ export default function FixedCostsPage() {
     | "endDate"
   >("startDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "not_started" | "in_progress" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchInputMobileRef = useRef<HTMLInputElement>(null);
@@ -227,8 +227,13 @@ export default function FixedCostsPage() {
 
   const fixedCosts = useMemo(() => {
     let filtered = [...fixedCostsCalculated];
-    if (!showCompleted) {
-      filtered = filtered.filter((item) => !item.isCompleted);
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((item) => {
+        if (statusFilter === "completed") return item.isCompleted;
+        if (statusFilter === "not_started") return !item.isStarted && !item.isCompleted;
+        if (statusFilter === "in_progress") return item.isStarted && !item.isCompleted;
+        return true;
+      });
     }
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -288,7 +293,7 @@ export default function FixedCostsPage() {
     return filtered;
   }, [
     fixedCostsCalculated,
-    showCompleted,
+    statusFilter,
     searchQuery,
     sortKey,
     sortDirection,
@@ -302,6 +307,30 @@ export default function FixedCostsPage() {
       setSortDirection("asc");
     }
   };
+
+  const sortLabel = useMemo(() => {
+    const dir = sortDirection === "asc" ? "昇順" : "降順";
+    switch (sortKey) {
+      case "startDate":
+        return `開始日（${sortDirection === "asc" ? "古い順" : "新しい順"}）`;
+      case "endDate":
+        return `完済予定（${sortDirection === "asc" ? "古い順" : "新しい順"}）`;
+      case "name":
+        return `名前（${dir}）`;
+      case "amountPerPayment":
+        return `金額（${sortDirection === "asc" ? "安い順" : "高い順"}）`;
+      case "totalAmount":
+        return `総額（${sortDirection === "asc" ? "安い順" : "高い順"}）`;
+      case "remaining":
+        return `残り（${sortDirection === "asc" ? "少ない順" : "多い順"}）`;
+      case "progress":
+        return `進捗（${sortDirection === "asc" ? "低い順" : "高い順"}）`;
+      case "status":
+        return `ステータス（${dir}）`;
+      default:
+        return "並び替え";
+    }
+  }, [sortKey, sortDirection]);
 
   const SortIcon = ({ column }: { column: typeof sortKey }) => {
     if (sortKey !== column)
@@ -944,21 +973,55 @@ export default function FixedCostsPage() {
                     className="h-10 md:h-9 gap-2"
                   >
                     <IconFilter className="h-4 w-4" />
-                    <span>すべて</span>
+                    <span>
+                      {
+                        {
+                          all: "すべて",
+                          not_started: "開始前",
+                          in_progress: "支払い中",
+                          completed: "完済",
+                        }[statusFilter]
+                      }
+                    </span>
                     <IconArrowDown className="h-3 w-3 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem
-                    onClick={() => setShowCompleted(!showCompleted)}
-                  >
+                  <DropdownMenuItem onClick={() => setStatusFilter("all")}>
                     <IconCheck
                       className={cn(
                         "h-4 w-4 mr-2",
-                        showCompleted ? "opacity-100" : "opacity-0",
+                        statusFilter === "all" ? "opacity-100" : "opacity-0",
                       )}
                     />
-                    完済を表示
+                    すべて
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("not_started")}>
+                    <IconCheck
+                      className={cn(
+                        "h-4 w-4 mr-2",
+                        statusFilter === "not_started" ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    開始前
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("in_progress")}>
+                    <IconCheck
+                      className={cn(
+                        "h-4 w-4 mr-2",
+                        statusFilter === "in_progress" ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    支払い中
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("completed")}>
+                    <IconCheck
+                      className={cn(
+                        "h-4 w-4 mr-2",
+                        statusFilter === "completed" ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    完済
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -971,7 +1034,7 @@ export default function FixedCostsPage() {
                     className="h-10 md:h-9 gap-2 flex-1 md:flex-none"
                   >
                     <IconArrowsSort className="h-4 w-4" />
-                    <span>開始日（新しい順）</span>
+                    <span>{sortLabel}</span>
                     <IconArrowDown className="h-3 w-3 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
