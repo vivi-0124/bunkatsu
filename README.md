@@ -1,50 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bunkatsu 💸
 
-## Tech Stack
+固定費と分割払いを直感的に管理・可視化するための Web アプリケーションです。
 
-このプロジェクトでは以下の技術スタックを使用しています。
+## 🚀 技術スタック
 
-- **Framework**: [Next.js](https://nextjs.org/) (App Router), [Hono](https://hono.dev/)
-- **Frontend**: [React](https://react.dev/), [Tailwind CSS v4](https://tailwindcss.com/)
-- **UI Components**: [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/), [TanStack Table](https://tanstack.com/table), [Recharts](https://recharts.org/)
-- **Database/ORM**: [Drizzle ORM](https://orm.drizzle.team/), [LibSQL](https://github.com/tursodatabase/libsql) (SQLite)
-- **Authentication**: [Better Auth](https://www.better-auth.com/)
-- **Forms**: [React Hook Form](https://react-hook-form.com/), [Zod](https://zod.dev/)
-- **Drag & Drop**: [@dnd-kit](https://dndkit.com/)
-- **Tooling**: [Biome](https://biomejs.dev/), [TypeScript](https://www.typescriptlang.org/)
+当プロジェクトは、元々 Next.js で構築されたアプリケーションを **Vue 3 + 独立した Hono サーバー** にリファクタリングして構築されています。
 
+### フロントエンド (Frontend)
+- **Framework**: Vue 3 (Composition API) + Vite
+- **UI Library**: Vuetify 3
+- **State Management**: Pinia
+- **Routing**: Vue Router
+- **Architecture**: Package by Feature（機能別ディレクトリ構成）
 
-## Getting Started
+### バックエンド (Backend)
+- **Framework**: Hono (`@hono/node-server` を用いた独立稼働)
+- **ORM**: Drizzle ORM
+- **Authentication**: Better Auth
 
-First, run the development server:
+### テスト (Testing)
+- **Test Runner**: Vitest
+- **Mocking**: MSW (Mock Service Worker)
+- **DOM Testing**: `@vue/test-utils` + `jsdom`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 📁 プロジェクト構造 (Package by Feature)
+
+フロントエンドのコードは `src/` 配下にあり、機能（ドメイン）ごとに分割されています。
+
+```text
+src/
+ ├── app/                  # エントリーポイント (App.vue, main.ts, router)
+ ├── shared/               # アプリ全体で共有するコンポーネント、コンポーザブル、MSW設定
+ └── features/             # 各機能ごとのモジュール
+      ├── auth/            # 認証関連 (stores)
+      ├── home/            # ランディングページ
+      ├── dashboard/       # ダッシュボード共通レイアウト
+      ├── fixed-costs/     # 固定費管理ページ
+      ├── monthly-records/ # 月次明細管理ページ・ダイアログ
+      └── admin/           # 管理者画面・ユーザー管理ページ
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ 開発環境のセットアップ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. 依存関係のインストール
+当プロジェクトはパッケージマネージャーに `pnpm` を推奨しています（npmでも可）。
+```bash
+pnpm install
+```
 
-## Learn More
+### 2. 環境変数の設定
+プロジェクトルートに `.env` ファイルを作成し、必要な環境変数（データベースURLやBetter Authの設定など）を記述してください。
 
-To learn more about Next.js, take a look at the following resources:
+### 3. アプリケーションの起動
+フロントエンドとバックエンド（API）は別々のポートで動作します。ターミナルを2つ開いて実行してください。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**ターミナル1: バックエンド (Hono サーバー)**
+```bash
+npm run dev:server
+# ポート 3001 で Hono サーバーが起動します
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**ターミナル2: フロントエンド (Vite サーバー)**
+```bash
+npm run dev
+# Vite の開発サーバーが起動し、/api へのリクエストは自動的にポート 3001 へプロキシされます
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🧪 テストの実行
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+フロントエンドのコンポーネントテスト（MSWモックを利用）および、バックエンドの API テストが含まれています。
+
+```bash
+# 全てのテストを1度だけ実行
+npm run test
+
+# ファイル変更を監視してテストを実行
+npm run test:watch
+
+# ブラウザ上でリッチな UI を使って結果を確認
+npm run test:ui
+```
+
+---
+
+## 📦 ビルドと型チェック
+
+本番環境向けのビルド、および TypeScript の型チェックを行うコマンドです。
+
+```bash
+# 型チェックのみ
+npm run typecheck
+
+# フロントエンドのビルド
+npm run build
+```
