@@ -21,12 +21,18 @@ const client = createClient({
   authToken,
   intMode: "string",
   fetch: (url, init) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2秒でタイムアウトさせる
+    
     return fetch(url, {
       ...init,
+      signal: controller.signal,
       headers: {
         ...init?.headers,
         "Connection": "close",
       },
+    }).finally(() => {
+      clearTimeout(timeoutId);
     });
   },
 });
