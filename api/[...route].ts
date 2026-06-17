@@ -1,10 +1,13 @@
 import { handle } from 'hono/vercel'
-import { app } from '../server/app'
 
 export default async function handler(req: any, res: any) {
   console.log(`[API Request] ${req.method} ${req.url}`);
   
   try {
+    console.log("--> Dynamic import of server/app starting...");
+    const { app } = await import('../server/app');
+    console.log("--> Dynamic import completed successfully.");
+    
     const webHandler = handle(app);
     console.log("--> Hono handle starting execution...");
     return webHandler(req, res);
@@ -21,6 +24,7 @@ export default async function handler(req: any, res: any) {
     }
   }
 }
+
 
 
 
