@@ -3,10 +3,10 @@ import { createClient } from "@libsql/client/web";
 import { drizzle } from "drizzle-orm/libsql";
 
 
-import * as authSchema from "./schemas/auth-schema";
-import * as fixedCostSchema from "./schemas/fixed-cost";
-import * as monthlyRecordSchema from "./schemas/monthly-record";
-import * as recurringItemSchema from "./schemas/recurring-item";
+import * as authSchema from "./schemas/auth-schema.js";
+import * as fixedCostSchema from "./schemas/fixed-cost.js";
+import * as monthlyRecordSchema from "./schemas/monthly-record.js";
+import * as recurringItemSchema from "./schemas/recurring-item.js";
 
 const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;

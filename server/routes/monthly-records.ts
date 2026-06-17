@@ -1,10 +1,10 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, eq, gte, inArray } from "drizzle-orm";
 
-import { db } from "../../db";
-import { fixedCosts } from "../../db/schemas/fixed-cost";
-import { monthlyIncomes, monthlyPayments } from "../../db/schemas/monthly-record";
-import { recurringItems } from "../../db/schemas/recurring-item";
+import { db } from "../../db/index.js";
+import { fixedCosts } from "../../db/schemas/fixed-cost.js";
+import { monthlyIncomes, monthlyPayments } from "../../db/schemas/monthly-record.js";
+import { recurringItems } from "../../db/schemas/recurring-item.js";
 
 const MonthlyRecordSchema = z.object({
   id: z.string(),

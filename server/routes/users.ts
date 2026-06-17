@@ -2,8 +2,8 @@ import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { db } from "../../db";
-import { users } from "../../db/schemas/auth-schema";
+import { db } from "../../db/index.js";
+import { users } from "../../db/schemas/auth-schema.js";
 
 export const usersRoutes = new Hono()
   .get("/users", async (c) => {

@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
-import { db } from "../../db";
-import { fixedCosts } from "../../db/schemas/fixed-cost";
+import { db } from "../../db/index.js";
+import { fixedCosts } from "../../db/schemas/fixed-cost.js";
 
 // 数値バリデーションの上限（JavaScript の安全な整数の最大値）
 const MAX_AMOUNT = Number.MAX_SAFE_INTEGER;

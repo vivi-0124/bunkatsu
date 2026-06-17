@@ -1,10 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { swaggerUI } from '@hono/swagger-ui'
-import { fixedCostsRoutes } from './routes/fixed-costs'
-import { monthlyRecordsRoutes } from './routes/monthly-records'
-import { recurringItemsRoutes } from './routes/recurring-items'
-import { usersRoutes } from './routes/users'
-import { authHandler } from './auth-handler'
+import { fixedCostsRoutes } from './routes/fixed-costs.js'
+import { monthlyRecordsRoutes } from './routes/monthly-records.js'
+import { recurringItemsRoutes } from './routes/recurring-items.js'
+import { usersRoutes } from './routes/users.js'
+import { authHandler } from './auth-handler.js'
 
 export const app = new OpenAPIHono().basePath('/api')
 

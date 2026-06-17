@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
-import { db } from "../../db";
-import { recurringItems } from "../../db/schemas/recurring-item";
+import { db } from "../../db/index.js";
+import { recurringItems } from "../../db/schemas/recurring-item.js";
 
 export const recurringItemsRoutes = new OpenAPIHono()
   .openapi(
