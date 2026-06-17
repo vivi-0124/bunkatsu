@@ -32,3 +32,7 @@ app.doc('/doc', {
 app.get('/ui', swaggerUI({ url: '/api/doc' }))
 
 export type AppType = typeof routes
+
+import { handle } from 'hono/vercel'
+export const webHandler = handle(app)
+

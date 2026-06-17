@@ -28,8 +28,8 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    console.log("--> Dynamically importing _handler...");
-    const { webHandler } = await import('./_handler');
+    console.log("--> Dynamically importing server/app...");
+    const { webHandler } = await import('../server/app');
     console.log("--> _handler imported, executing...");
     return webHandler(req, res);
   } catch (error: any) {
