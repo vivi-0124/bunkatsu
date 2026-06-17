@@ -9,6 +9,7 @@ export const monthlyPayments = sqliteTable("monthly_payments", {
   name: text("name").notNull(),
   amount: integer("amount").notNull(),
   paymentDate: text("payment_date"), // MM/DD or arbitrary text
+  accountSource: text("account_source"), // 引き落とし口座
   isPaid: integer("is_paid", { mode: "boolean" }).notNull().default(false),
   templateId: text("template_id"), // 項目テンプレートへの参照（任意）
   isExcluded: integer("is_excluded", { mode: "boolean" })

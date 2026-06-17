@@ -33,6 +33,7 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
   const [paymentName, setPaymentName] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [paymentAccountSource, setPaymentAccountSource] = useState("");
   const [paymentRecurring, setPaymentRecurring] = useState(false);
 
   const [incomeName, setIncomeName] = useState("");
@@ -44,6 +45,7 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
     setPaymentName("");
     setPaymentAmount("");
     setPaymentDate("");
+    setPaymentAccountSource("");
     setPaymentRecurring(false);
     setIncomeName("");
     setIncomeAmount("");
@@ -65,6 +67,7 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
             type: "payment" as const,
             startMonth: month,
             paymentDate: paymentDate || null,
+            accountSource: paymentAccountSource || null,
           },
         });
         if (recurRes.ok) {
@@ -84,6 +87,7 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
             name: paymentName,
             amount: paymentAmount ? parseInt(paymentAmount, 10) : 0,
             paymentDate: paymentDate || null,
+            accountSource: paymentAccountSource || null,
             isPaid: false,
           },
         });
@@ -208,6 +212,15 @@ export function AddRecordDialog({ month, onSuccess }: AddRecordDialogProps) {
                 placeholder="例: 10/27"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="payment-account-source">引き落とし口座（任意）</Label>
+              <Input
+                id="payment-account-source"
+                placeholder="例: 楽天カード"
+                value={paymentAccountSource}
+                onChange={(e) => setPaymentAccountSource(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">

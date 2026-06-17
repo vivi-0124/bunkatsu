@@ -13,6 +13,7 @@ const MonthlyRecordSchema = z.object({
   name: z.string(),
   amount: z.union([z.number(), z.string()]),
   paymentDate: z.string().nullable().optional(),
+  accountSource: z.string().nullable().optional(),
   date: z.string().nullable().optional(),
   isPaid: z.boolean().optional(),
   templateId: z.string().nullable().optional(),
@@ -104,6 +105,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
               name: item.name,
               amount: Number(item.amount),
               paymentDate: item.paymentDate || "",
+              accountSource: item.accountSource || null,
               isPaid: false,
               templateId: item.id,
             });
@@ -162,6 +164,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
                 name: z.string(),
                 amount: z.number(),
                 paymentDate: z.string().nullable().optional(),
+                accountSource: z.string().nullable().optional(),
                 isPaid: z.boolean().optional(),
               }),
             },
@@ -669,6 +672,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
             name: body.name ?? record.name,
             amount: body.amount ?? record.amount,
             paymentDate: body.paymentDate ?? record.paymentDate,
+            accountSource: body.accountSource !== undefined ? body.accountSource : record.accountSource,
           })
           .where(eq(recurringItems.id, record.templateId));
         await db
@@ -677,6 +681,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
             name: body.name ?? record.name,
             amount: body.amount ?? record.amount,
             paymentDate: body.paymentDate ?? record.paymentDate,
+            accountSource: body.accountSource !== undefined ? body.accountSource : record.accountSource,
           })
           .where(
             and(

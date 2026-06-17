@@ -102,6 +102,7 @@ export default function MonthlyPage() {
     name: "",
     amount: "",
     paymentDate: "",
+    accountSource: "",
     isPaid: false,
   });
   const [editIncomeForm, setEditIncomeForm] = useState({
@@ -404,6 +405,7 @@ export default function MonthlyPage() {
       name: payment.name,
       amount: String(payment.amount),
       paymentDate: payment.paymentDate ?? "",
+      accountSource: payment.accountSource ?? "",
       isPaid: payment.isPaid,
     });
   };
@@ -422,6 +424,7 @@ export default function MonthlyPage() {
             name: editPaymentForm.name,
             amount: Number(editPaymentForm.amount),
             paymentDate: editPaymentForm.paymentDate,
+            accountSource: editPaymentForm.accountSource || null,
             isPaid: editPaymentForm.isPaid,
             scope,
           }),
@@ -738,6 +741,7 @@ export default function MonthlyPage() {
                           />
                         </span>
                       </TableHead>
+                      <TableHead className="text-xs">口座</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -763,6 +767,13 @@ export default function MonthlyPage() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {p.paymentDate}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {p.accountSource && (
+                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border/50">
+                              {p.accountSource}
+                            </span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1046,6 +1057,20 @@ export default function MonthlyPage() {
                   })
                 }
                 placeholder="例: 10/27"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-payment-account-source">引き落とし口座</Label>
+              <Input
+                id="edit-payment-account-source"
+                value={editPaymentForm.accountSource}
+                onChange={(e) =>
+                  setEditPaymentForm({
+                    ...editPaymentForm,
+                    accountSource: e.target.value,
+                  })
+                }
+                placeholder="例: 楽天カード"
               />
             </div>
             <div className="flex items-center space-x-2">

@@ -10,6 +10,7 @@ export const recurringItems = sqliteTable("recurring_items", {
   type: text("type", { enum: ["payment", "income"] }).notNull(),
   startMonth: text("start_month"), // YYYY-MM
   paymentDate: text("payment_date"), // MM/DD or arbitrary text
+  accountSource: text("account_source"), // 引き落とし口座
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
