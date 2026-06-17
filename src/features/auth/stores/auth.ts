@@ -22,13 +22,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function signIn() {
-    try {
-      await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: '/dashboard',
-      })
-    } catch (e) {
-      console.error(e)
+    const result = await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: '/dashboard',
+    })
+    if (result?.error) {
+      console.error('Sign in error:', result.error)
+      throw result.error
     }
   }
 

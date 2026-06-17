@@ -7,14 +7,24 @@ const authStore = useAuthStore()
 const theme = useTheme()
 
 const isDark = ref(theme.global.name.value === 'dark')
+const loginError = ref<string | null>(null)
+const isLoggingIn = ref(false)
 
 function toggleTheme() {
   isDark.value = !isDark.value
   theme.global.name.value = isDark.value ? 'dark' : 'light'
 }
 
-function handleLogin() {
-  authStore.signIn()
+async function handleLogin() {
+  loginError.value = null
+  isLoggingIn.value = true
+  try {
+    await authStore.signIn()
+  } catch (e) {
+    loginError.value = 'ログインに失敗しました。もう一度お試しください。'
+  } finally {
+    isLoggingIn.value = false
+  }
 }
 </script>
 
@@ -36,6 +46,8 @@ function handleLogin() {
         color="primary"
         variant="flat"
         @click="handleLogin"
+        :loading="isLoggingIn"
+        :disabled="isLoggingIn"
         class="text-none font-weight-medium px-6 rounded-pill"
       >
         ログイン
@@ -68,12 +80,25 @@ function handleLogin() {
             size="x-large"
             variant="flat"
             @click="handleLogin"
+            :loading="isLoggingIn"
+            :disabled="isLoggingIn"
             class="rounded-pill px-8"
           >
             無料で始める
             <v-icon icon="mdi-arrow-right" class="ml-2" />
           </v-btn>
         </div>
+        <v-alert
+          v-if="loginError"
+          type="error"
+          variant="tonal"
+          class="mt-4 mx-auto"
+          style="max-width: 400px"
+          closable
+          @click:close="loginError = null"
+        >
+          {{ loginError }}
+        </v-alert>
       </section>
 
       <!-- Features Section -->
