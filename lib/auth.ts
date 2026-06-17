@@ -13,7 +13,7 @@ export const auth = betterAuth({
       ...authSchema,
     },
   }),
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: process.env.BETTER_AUTH_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined),
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,

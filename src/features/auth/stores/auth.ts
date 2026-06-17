@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { authClient } from '../../../../lib/auth-client'
+import { useSnackbar } from '@/shared/composables/useSnackbar'
 
 export const useAuthStore = defineStore('auth', () => {
   const session = ref<any>(null)
   const isPending = ref(true)
+  const { error: showError } = useSnackbar()
 
   async function fetchSession() {
     try {
@@ -23,12 +25,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function signIn() {
     try {
-      await authClient.signIn.social({
+      const res = await authClient.signIn.social({
         provider: 'google',
         callbackURL: '/dashboard',
       })
-    } catch (e) {
+      if (res?.error) {
+        throw new Error(res.error.message || 'ログインに失敗しました')
+      }
+    } catch (e: any) {
       console.error(e)
+      showError(e.message || '認証サーバーに接続できません。Vercelの環境変数を確認してください。')
     }
   }
 
@@ -42,8 +48,9 @@ export const useAuthStore = defineStore('auth', () => {
           }
         }
       })
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
+      showError(e.message || 'ログアウトに失敗しました')
     }
   }
 
