@@ -1,26 +1,27 @@
-// インポートを行う前に、未キャッチ例外のハンドラを登録して起動時エラーを補足する
+import { handle } from 'hono/vercel'
+
+let webHandler: any = null;
 let bootError: any = null;
 
-if (typeof process !== 'undefined') {
-  process.on('uncaughtException', (err) => {
-    console.error("🔥 Uncaught Exception caught during boot/runtime:", err);
-    bootError = err;
-  });
-  process.on('unhandledRejection', (reason) => {
-    console.error("🔥 Unhandled Rejection caught during boot/runtime:", reason);
-    bootError = reason;
-  });
+try {
+  // Top-level await によるダイナミックインポート。
+  // 静的リテラルパスをインポートするため、Vercel (esbuild) はこれを検出し、
+  // すべての依存モジュールを1ファイルにインラインバンドルします（Cannot find module が起きません）。
+  const { app } = await import('../server/app');
+  webHandler = handle(app);
+} catch (error: any) {
+  console.error("🔥 Vercel Top-level Boot Error:", error);
+  bootError = error;
 }
 
 export default async function handler(req: any, res: any) {
   console.log(`[API Request] ${req.method} ${req.url}`);
   
-  // 起動時（インポート時）にエラーが発生していた場合は、ここでJSONを返す
   if (bootError) {
-    console.error("Returning boot error response:", bootError);
+    console.error("Boot error active, returning JSON response.");
     if (res && typeof res.status === 'function') {
       return res.status(500).json({
-        error: "Vercel Boot Exception (Uncaught)",
+        error: "Vercel Boot Exception (Top-level)",
         message: bootError.message || String(bootError),
         stack: bootError.stack,
       });
@@ -28,22 +29,19 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    console.log("--> Dynamically importing server/app.js...");
-    // 拡張子 .js を明示的に指定してNode.js ESMでの解決を保証する
-    const { webHandler } = await import('../server/app.js');
-    console.log("--> server/app.js imported successfully.");
     return webHandler(req, res);
   } catch (error: any) {
-    console.error("Vercel Request/Import Error Caught:", error);
+    console.error("Vercel Request Execution Error Caught:", error);
     if (res && typeof res.status === 'function') {
       res.status(500).json({
-        error: "Vercel Execution/Import Error",
+        error: "Vercel Execution Error",
         message: error.message,
         stack: error.stack,
       });
     }
   }
 }
+
 
 
 
