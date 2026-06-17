@@ -4,6 +4,8 @@ import { db } from "../db";
 
 import * as authSchema from "../db/schemas/auth-schema";
 
+const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "sqlite",
@@ -12,7 +14,9 @@ export const auth = betterAuth({
       ...authSchema,
     },
   }),
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: [baseURL],
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,

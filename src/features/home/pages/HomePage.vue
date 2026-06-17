@@ -20,8 +20,9 @@ async function handleLogin() {
   isLoggingIn.value = true
   try {
     await authStore.signIn()
-  } catch (e) {
-    loginError.value = 'ログインに失敗しました。もう一度お試しください。'
+  } catch (e: any) {
+    const msg = e?.message || e?.code || JSON.stringify(e)
+    loginError.value = `ログインに失敗しました: ${msg}`
   } finally {
     isLoggingIn.value = false
   }
