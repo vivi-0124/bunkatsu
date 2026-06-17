@@ -20,17 +20,13 @@ const client = createClient({
   url: url || "libsql://placeholder-to-prevent-boot-crash-temporary.io",
   authToken,
   intMode: "string",
-  fetch: (url, init) => {
+  fetch: (url: any, init: any) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000); // 2秒でタイムアウトさせる
     
     return fetch(url, {
       ...init,
       signal: controller.signal,
-      headers: {
-        ...init?.headers,
-        "Connection": "close",
-      },
     }).finally(() => {
       clearTimeout(timeoutId);
     });
