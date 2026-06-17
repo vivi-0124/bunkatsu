@@ -8,6 +8,15 @@ import { authHandler } from './auth-handler'
 
 export const app = new OpenAPIHono().basePath('/api')
 
+app.onError((err, c) => {
+  console.error(err)
+  return c.json({
+    error: "Internal Server Error",
+    message: err.message,
+    stack: err.stack,
+  }, 500)
+})
+
 app.route('/auth', authHandler)
 
 const routes = app

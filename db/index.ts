@@ -1,6 +1,7 @@
 import "dotenv/config";
-import { createClient } from "@libsql/client";
+import { createClient } from "@libsql/client/web";
 import { drizzle } from "drizzle-orm/libsql";
+
 
 import * as authSchema from "./schemas/auth-schema";
 import * as fixedCostSchema from "./schemas/fixed-cost";
