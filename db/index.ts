@@ -20,6 +20,15 @@ const client = createClient({
   url: url || "libsql://placeholder-to-prevent-boot-crash-temporary.io",
   authToken,
   intMode: "string",
+  fetch: (url, init) => {
+    return fetch(url, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        "Connection": "close",
+      },
+    });
+  },
 });
 
 export const db = drizzle(client, {
