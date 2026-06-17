@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { app } from './index' // export app from index
+import { app } from './app' // export app from index
 
 // Hono のテスト
 describe('Hono Server API', () => {
