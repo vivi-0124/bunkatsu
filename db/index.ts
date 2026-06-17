@@ -12,13 +12,12 @@ const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
 
 if (!url) {
-  throw new Error("TURSO_DATABASE_URL is not set");
+  console.warn("⚠️ WARNING: TURSO_DATABASE_URL is not set. Database actions will crash during request processing.");
 }
 
-// intMode: "string" を設定することで、整数値を文字列として安全に扱えるようにする
-// これにより Number.MAX_SAFE_INTEGER を超える値もエラーなく処理可能
+// url がない場合はダミーのURLを使用することで起動時の例外を防ぐ
 const client = createClient({
-  url,
+  url: url || "libsql://placeholder-to-prevent-boot-crash-temporary.io",
   authToken,
   intMode: "string",
 });
