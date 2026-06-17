@@ -12,9 +12,6 @@ if (typeof process !== 'undefined') {
   });
 }
 
-import { handle } from 'hono/vercel'
-import { app } from '../server/app'
-
 export default async function handler(req: any, res: any) {
   console.log(`[API Request] ${req.method} ${req.url}`);
   
@@ -31,14 +28,15 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const webHandler = handle(app);
-    console.log("--> Hono handle starting execution...");
+    console.log("--> Dynamically importing _handler...");
+    const { webHandler } = await import('./_handler');
+    console.log("--> _handler imported, executing...");
     return webHandler(req, res);
   } catch (error: any) {
-    console.error("Vercel Request Error Caught:", error);
+    console.error("Vercel Request/Import Error Caught:", error);
     if (res && typeof res.status === 'function') {
       res.status(500).json({
-        error: "Vercel Execution Error",
+        error: "Vercel Execution/Import Error",
         message: error.message,
         stack: error.stack,
       });
@@ -47,6 +45,7 @@ export default async function handler(req: any, res: any) {
     }
   }
 }
+
 
 
 
