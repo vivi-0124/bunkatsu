@@ -27,6 +27,8 @@
     "@hono/zod-validator": "^0.7.6",
     "@libsql/client": "^0.15.15",
     "@mdi/font": "^7.4.47",
+    "@tanstack/vue-query": "^5.101.0",
+    "axios": "^1.18.0",
     "better-auth": "1.6.19",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",

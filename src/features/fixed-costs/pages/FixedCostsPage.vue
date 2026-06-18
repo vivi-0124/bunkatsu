@@ -2,14 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useSnackbar } from '@/shared/composables/useSnackbar'
 import { useDisplay } from 'vuetify'
-import { storeToRefs } from 'pinia'
-import { useFixedCostsStore } from '../stores/fixedCosts'
+import { useFixedCosts } from '../composables/useFixedCosts'
 
 const { success, error } = useSnackbar()
 const { mdAndDown } = useDisplay()
 
-const store = useFixedCostsStore()
-const { items, loading } = storeToRefs(store)
+const { items, loading, saveItem, deleteItem, importCsv, downloadTemplate, exportCsv } = useFixedCosts()
 
 // State
 const search = ref('')
@@ -37,7 +35,7 @@ const deleteId = ref('')
 const importFile = ref<File | null>(null)
 const isImporting = ref(false)
 
-async function saveItem() {
+async function handleSaveItem() {
   if (!formData.value.name || !formData.value.startDate || !formData.value.amountPerPayment) {
     error('必須項目を入力してください')
     return
@@ -52,7 +50,7 @@ async function saveItem() {
   }
 
   try {
-    await store.saveItem(payload, isEditing.value, formData.value.id)
+    await saveItem(payload, isEditing.value, formData.value.id)
     success(isEditing.value ? '更新しました' : '追加しました')
     editDialog.value = false
   } catch (e) {
@@ -60,9 +58,9 @@ async function saveItem() {
   }
 }
 
-async function deleteItem() {
+async function handleDeleteItem() {
   try {
-    await store.deleteItem(deleteId.value)
+    await deleteItem(deleteId.value)
     success('削除しました')
     deleteDialog.value = false
   } catch (e) {
@@ -72,10 +70,10 @@ async function deleteItem() {
 
 async function handleImport() {
   if (!importFile.value) return
-  
+
   isImporting.value = true
   try {
-    await store.importCsv(importFile.value)
+    await importCsv(importFile.value)
     success('インポートが完了しました')
     importDialog.value = false
     importFile.value = null
@@ -84,14 +82,6 @@ async function handleImport() {
   } finally {
     isImporting.value = false
   }
-}
-
-function downloadTemplate() {
-  store.downloadTemplate()
-}
-
-function exportCsv() {
-  store.exportCsv()
 }
 
 // Handlers
@@ -164,7 +154,7 @@ const headers = [
 ]
 
 onMounted(() => {
-  store.fetchItems()
+  // TanStack Query auto-fetches when enabled condition is met
 })
 </script>
 
@@ -334,7 +324,7 @@ onMounted(() => {
         <v-card-actions class="pa-4 pt-0">
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="editDialog = false">キャンセル</v-btn>
-          <v-btn color="primary" variant="flat" @click="saveItem">{{ isEditing ? '更新' : '追加' }}</v-btn>
+          <v-btn color="primary" variant="flat" @click="handleSaveItem">{{ isEditing ? '更新' : '追加' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -349,7 +339,7 @@ onMounted(() => {
         <v-card-actions class="pa-4 pt-0">
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="deleteDialog = false">キャンセル</v-btn>
-          <v-btn color="error" variant="flat" @click="deleteItem">削除する</v-btn>
+          <v-btn color="error" variant="flat" @click="handleDeleteItem">削除する</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

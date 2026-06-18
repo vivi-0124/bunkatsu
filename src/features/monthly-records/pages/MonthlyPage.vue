@@ -2,11 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSnackbar } from '@/shared/composables/useSnackbar'
 import AddRecordDialog from '../components/AddRecordDialog.vue'
-import { useMonthlyRecordsStore } from '../stores/monthlyRecords'
-import { storeToRefs } from 'pinia'
+import { useMonthlyRecords } from '../composables/useMonthlyRecords'
 
 const { success, error } = useSnackbar()
-const store = useMonthlyRecordsStore()
 
 const {
   records,
@@ -17,8 +15,24 @@ const {
   totalPayment,
   remainingPayment,
   balance,
-  balanceProgress
-} = storeToRefs(store)
+  balanceProgress,
+  initMonth,
+  fetchRecords,
+  prevMonth: goPrevMonth,
+  nextMonth: goNextMonth,
+  addPayment,
+  addIncome,
+  updatePayment,
+  updateIncome,
+  deleteRecord,
+  togglePaid,
+  generateRecurring,
+  bulkSetPaid,
+  bulkDelete,
+  importCsv,
+  downloadTemplate,
+  exportCsv,
+} = useMonthlyRecords()
 
 // State
 const selectedPayments = ref<string[]>([])
@@ -43,16 +57,16 @@ const saveTarget = ref<any>(null)
 
 // Initialize
 onMounted(() => {
-  store.initMonth()
-  store.fetchRecords().catch(() => error('データの取得に失敗しました'))
+  initMonth()
+  fetchRecords().catch(() => error('データの取得に失敗しました'))
 })
 
 function prevMonth() {
-  store.prevMonth().catch(() => error('データの取得に失敗しました'))
+  goPrevMonth()
 }
 
 function nextMonth() {
-  store.nextMonth().catch(() => error('データの取得に失敗しました'))
+  goNextMonth()
 }
 
 const paymentHeaders = [
@@ -87,7 +101,7 @@ async function handleEditPaymentSubmit(scope: 'this_month' | 'all_future') {
       isPaid: editPaymentForm.value.isPaid,
       scope
     }
-    await store.updatePayment(editPaymentForm.value.id, payload)
+    await updatePayment(editPaymentForm.value.id, payload)
     success('更新しました')
     editPaymentDialog.value = false
     saveTarget.value = null
@@ -104,7 +118,7 @@ async function handleEditIncomeSubmit(scope: 'this_month' | 'all_future' = 'this
       date: editIncomeForm.value.date || null,
       scope
     }
-    await store.updateIncome(editIncomeForm.value.id, payload)
+    await updateIncome(editIncomeForm.value.id, payload)
     success('更新しました')
     editIncomeDialog.value = false
   } catch (e) {
@@ -114,10 +128,10 @@ async function handleEditIncomeSubmit(scope: 'this_month' | 'all_future' = 'this
 
 async function executeDelete(scope: 'this_month' | 'all_future' = 'this_month') {
   if (!deleteTarget.value) return
-  
+
   try {
     const { id, type } = deleteTarget.value
-    await store.deleteRecord(id, type, scope)
+    await deleteRecord(id, type, scope)
     success('削除しました')
     editPaymentDialog.value = false
     editIncomeDialog.value = false
@@ -129,16 +143,16 @@ async function executeDelete(scope: 'this_month' | 'all_future' = 'this_month') 
 
 async function togglePaidStatus(item: any) {
   try {
-    await store.togglePaid(item.id, !item.isPaid)
+    await togglePaid(item.id, !item.isPaid)
   } catch (e) {
     error('更新に失敗しました')
-    item.isPaid = !item.isPaid // revert local state on failure
+    item.isPaid = !item.isPaid
   }
 }
 
 async function handleGenerateRecurring() {
   try {
-    await store.generateRecurring()
+    await generateRecurring()
     success('今月の明細を生成しました')
   } catch (e) {
     error('生成に失敗しました')
@@ -148,7 +162,7 @@ async function handleGenerateRecurring() {
 async function handleBulkSetPaid() {
   if (selectedPayments.value.length === 0) return
   try {
-    await store.bulkSetPaid(selectedPayments.value, true)
+    await bulkSetPaid(selectedPayments.value, true)
     success('選択した項目を支払済みにしました')
     selectedPayments.value = []
   } catch (e) {
@@ -161,7 +175,7 @@ async function handleBulkDelete() {
   if (!confirm('選択した項目を削除してもよろしいですか？')) return
 
   try {
-    await store.bulkDelete(selectedPayments.value)
+    await bulkDelete(selectedPayments.value)
     success('削除しました')
     selectedPayments.value = []
   } catch (e) {
@@ -171,10 +185,10 @@ async function handleBulkDelete() {
 
 async function handleImport() {
   if (!importFile.value) return
-  
+
   isImporting.value = true
   try {
-    await store.importCsv(importFile.value)
+    await importCsv(importFile.value)
     success('インポートが完了しました')
     importDialog.value = false
     importFile.value = null
@@ -183,14 +197,6 @@ async function handleImport() {
   } finally {
     isImporting.value = false
   }
-}
-
-function downloadTemplate() {
-  store.downloadTemplate()
-}
-
-function exportCsv() {
-  store.exportCsv()
 }
 </script>
 
@@ -380,7 +386,7 @@ function exportCsv() {
       </v-col>
     </v-row>
 
-    <AddRecordDialog v-model="addDialog" :month="currentMonth" @success="store.fetchRecords()" />
+    <AddRecordDialog v-model="addDialog" :month="currentMonth" @success="fetchRecords()" />
 
     <!-- Edit Payment Dialog -->
     <v-dialog v-model="editPaymentDialog" max-width="500px">

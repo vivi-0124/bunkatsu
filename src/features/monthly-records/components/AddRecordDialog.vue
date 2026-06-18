@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSnackbar } from '@/shared/composables/useSnackbar'
-import { useMonthlyRecordsStore } from '../stores/monthlyRecords'
+import { useMonthlyRecords } from '../composables/useMonthlyRecords'
 
 const props = defineProps<{
   month: string
@@ -11,7 +11,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'success'])
 
 const { success, error } = useSnackbar()
-const store = useMonthlyRecordsStore()
+const { addPayment, addIncome } = useMonthlyRecords()
 
 const tab = ref('payment')
 const isSubmitting = ref(false)
@@ -49,7 +49,7 @@ async function handleAddPayment() {
       amount: paymentForm.value.amount ? Number(paymentForm.value.amount) : 0,
       paymentDate: paymentForm.value.date || null
     }
-    await store.addPayment(payload, paymentForm.value.recurring)
+    await addPayment(payload, paymentForm.value.recurring)
     success(paymentForm.value.recurring ? '支出項目を追加しました（毎月繰り返し）' : '支出項目を追加しました')
     resetForms()
     emit('success')
@@ -71,7 +71,7 @@ async function handleAddIncome() {
       amount: incomeForm.value.amount ? Number(incomeForm.value.amount) : 0,
       date: incomeForm.value.date || null
     }
-    await store.addIncome(payload, incomeForm.value.recurring)
+    await addIncome(payload, incomeForm.value.recurring)
     success(incomeForm.value.recurring ? '収入項目を追加しました（毎月繰り返し）' : '収入項目を追加しました')
     resetForms()
     emit('success')
