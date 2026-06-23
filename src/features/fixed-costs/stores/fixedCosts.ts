@@ -64,15 +64,13 @@ export const useFixedCostsStore = defineStore('fixedCosts', () => {
   async function importCsv(file: File) {
     if (!authStore.session?.user?.id) throw new Error('Unauthorized')
 
-    const formDataObj = new FormData()
-    formDataObj.append('file', file)
-    formDataObj.append('userId', authStore.session.user.id)
-
+    const csvData = await file.text()
     const res = await fetch('/api/fixed-costs/import', {
       method: 'POST',
-      body: formDataObj
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csvData, userId: authStore.session.user.id })
     })
-    
+
     if (res.ok) {
       await fetchItems()
     } else {

@@ -182,7 +182,7 @@ export const useMonthlyRecordsStore = defineStore('monthlyRecords', () => {
     const res = await fetch('/api/monthly-records/bulk-delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: authStore.session.user.id, ids })
+      body: JSON.stringify({ items: ids.map(id => ({ type: 'payment', id })) })
     })
     if (!res.ok) throw new Error('Failed to bulk delete')
     await fetchRecords()
@@ -190,10 +190,12 @@ export const useMonthlyRecordsStore = defineStore('monthlyRecords', () => {
 
   async function importCsv(file: File) {
     if (!authStore.session?.user?.id) throw new Error('Unauthorized')
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('userId', authStore.session.user.id)
-    const res = await fetch('/api/monthly-records/import', { method: 'POST', body: formData })
+    const csvText = await file.text()
+    const res = await fetch('/api/monthly-records/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csvText, month: currentMonth.value, userId: authStore.session.user.id })
+    })
     if (!res.ok) throw new Error('Failed to import')
     await fetchRecords()
   }

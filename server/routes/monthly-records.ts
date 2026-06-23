@@ -28,6 +28,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
       request: {
         query: z.object({
           month: z.string().regex(/^\d{4}-\d{2}$/),
+          userId: z.string(),
         }),
       },
       responses: {
@@ -45,13 +46,13 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
       },
     }),
     async (c) => {
-      const { month } = c.req.valid("query");
+      const { month, userId } = c.req.valid("query");
 
-      // 繰り返し項目の自動生成
+      // 繰り返し項目の自動生成（このユーザーのみ）
       const allRecurring = await db
         .select()
         .from(recurringItems)
-        .where(eq(recurringItems.isActive, true));
+        .where(and(eq(recurringItems.isActive, true), eq(recurringItems.userId, userId)));
 
       if (allRecurring.length > 0) {
         // 既存のtemplateIdを取得して重複チェック
@@ -128,6 +129,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
         .from(monthlyPayments)
         .where(
           and(
+            eq(monthlyPayments.userId, userId),
             eq(monthlyPayments.month, month),
             eq(monthlyPayments.isExcluded, false),
           ),
@@ -137,6 +139,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
         .from(monthlyIncomes)
         .where(
           and(
+            eq(monthlyIncomes.userId, userId),
             eq(monthlyIncomes.month, month),
             eq(monthlyIncomes.isExcluded, false),
           ),
@@ -522,6 +525,7 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
             "application/json": {
               schema: z.object({
                 ids: z.array(z.string()),
+                isPaid: z.boolean().optional(),
               }),
             },
           },
@@ -537,18 +541,12 @@ export const monthlyRecordsRoutes = new OpenAPIHono()
       },
     }),
     async (c) => {
-      const { ids } = c.req.valid("json");
+      const { ids, isPaid = true } = c.req.valid("json");
       for (const id of ids) {
-        const [record] = await db
-          .select({ isPaid: monthlyPayments.isPaid })
-          .from(monthlyPayments)
+        await db
+          .update(monthlyPayments)
+          .set({ isPaid })
           .where(eq(monthlyPayments.id, id));
-        if (record) {
-          await db
-            .update(monthlyPayments)
-            .set({ isPaid: !record.isPaid })
-            .where(eq(monthlyPayments.id, id));
-        }
       }
       return c.json({ success: true });
     },

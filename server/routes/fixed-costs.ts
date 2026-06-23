@@ -14,7 +14,7 @@ export const fixedCostsRoutes = new OpenAPIHono()
   .openapi(
     createRoute({
       method: "get",
-      path: "/dashboard/fixed-costs",
+      path: "/fixed-costs",
       request: {
         query: z.object({
           userId: z
@@ -58,7 +58,7 @@ export const fixedCostsRoutes = new OpenAPIHono()
   .openapi(
     createRoute({
       method: "post",
-      path: "/dashboard/fixed-costs",
+      path: "/fixed-costs",
       request: {
         body: {
           content: {
@@ -133,7 +133,7 @@ export const fixedCostsRoutes = new OpenAPIHono()
   .openapi(
     createRoute({
       method: "patch",
-      path: "/dashboard/fixed-costs/{id}",
+      path: "/fixed-costs/{id}",
       request: {
         params: z.object({
           id: z.string().openapi({ param: { name: "id", in: "path" } }),
@@ -206,7 +206,7 @@ export const fixedCostsRoutes = new OpenAPIHono()
   .openapi(
     createRoute({
       method: "delete",
-      path: "/dashboard/fixed-costs/{id}",
+      path: "/fixed-costs/{id}",
       request: {
         params: z.object({
           id: z.string().openapi({ param: { name: "id", in: "path" } }),
@@ -233,7 +233,7 @@ export const fixedCostsRoutes = new OpenAPIHono()
   .openapi(
     createRoute({
       method: "get",
-      path: "/dashboard/fixed-costs/export",
+      path: "/fixed-costs/export",
       request: {
         query: z.object({
           userId: z
@@ -290,7 +290,7 @@ export const fixedCostsRoutes = new OpenAPIHono()
   .openapi(
     createRoute({
       method: "get",
-      path: "/dashboard/fixed-costs/template",
+      path: "/fixed-costs/template",
       responses: {
         200: {
           description: "CSV Template",
@@ -328,7 +328,7 @@ export const fixedCostsRoutes = new OpenAPIHono()
   .openapi(
     createRoute({
       method: "post",
-      path: "/dashboard/fixed-costs/import",
+      path: "/fixed-costs/import",
       request: {
         body: {
           content: {
