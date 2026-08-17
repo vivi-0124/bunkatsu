@@ -287,7 +287,7 @@ function exportCsv() {
         <v-btn size="small" color="primary" variant="flat" prepend-icon="mdi-check-circle" @click="handleBulkSetPaid(true)">
           支払済みにする
         </v-btn>
-        <v-btn size="small" color="warning" variant="tonal" prepend-icon="mdi-close-circle-outline" @click="handleBulkSetPaid(false)">
+        <v-btn size="small" variant="outlined" prepend-icon="mdi-undo" @click="handleBulkSetPaid(false)">
           支払い解除
         </v-btn>
       </template>
