@@ -343,7 +343,7 @@ function exportCsv() {
             </template>
             <template v-slot:item.amount="{ item }">
               <span class="font-mono cursor-pointer" :class="{ 'text-medium-emphasis': item.isPaid }" @click="openEditPayment(item)">
-                ¥{{ item.amount.toLocaleString() }}
+                ¥{{ Number(item.amount || 0).toLocaleString() }}
               </span>
             </template>
             <template v-slot:item.paymentDate="{ item }">
@@ -392,7 +392,7 @@ function exportCsv() {
             </template>
             <template v-slot:item.amount="{ item }">
               <span class="font-mono cursor-pointer" @click="openEditIncome(item)">
-                ¥{{ item.amount.toLocaleString() }}
+                ¥{{ Number(item.amount || 0).toLocaleString() }}
               </span>
             </template>
             <template v-slot:item.date="{ item }">

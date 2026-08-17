@@ -252,18 +252,18 @@ onMounted(() => {
         </template>
 
         <template v-slot:item.amountPerPayment="{ item }">
-          <span class="font-weight-medium">¥{{ item.amountPerPayment?.toLocaleString() }}</span>
+          <span class="font-weight-medium">¥{{ Number(item.amountPerPayment || 0).toLocaleString() }}</span>
         </template>
 
         <template v-slot:item.totalAmount="{ item }">
           <span class="text-medium-emphasis">
-            {{ item.totalAmount ? `¥${item.totalAmount.toLocaleString()}` : (item.totalPayments ? `¥${(item.amountPerPayment * item.totalPayments).toLocaleString()}` : '—') }}
+            {{ item.totalAmount ? `¥${Number(item.totalAmount).toLocaleString()}` : (item.totalPayments ? `¥${Number(Number(item.amountPerPayment) * Number(item.totalPayments)).toLocaleString()}` : '—') }}
           </span>
         </template>
 
         <template v-slot:item.remaining="{ item }">
           <span :class="item.isCompleted ? 'text-medium-emphasis' : 'text-success font-weight-bold'">
-            {{ getRemainingAmount(item) !== null ? `¥${getRemainingAmount(item)?.toLocaleString()}` : '—' }}
+            {{ getRemainingAmount(item) !== null ? `¥${Number(getRemainingAmount(item)).toLocaleString()}` : '—' }}
           </span>
         </template>
 
@@ -303,11 +303,11 @@ onMounted(() => {
             <v-row no-gutters>
               <v-col cols="6">
                 <div class="text-caption text-medium-emphasis">月額</div>
-                <div class="font-weight-bold">¥{{ item.amountPerPayment?.toLocaleString() }}</div>
+                <div class="font-weight-bold">¥{{ Number(item.amountPerPayment || 0).toLocaleString() }}</div>
               </v-col>
               <v-col cols="6" class="text-right">
                 <div class="text-caption text-medium-emphasis">残り</div>
-                <div class="font-weight-bold text-primary">{{ getRemainingAmount(item) !== null ? `¥${getRemainingAmount(item)?.toLocaleString()}` : '-' }}</div>
+                <div class="font-weight-bold text-primary">{{ getRemainingAmount(item) !== null ? `¥${Number(getRemainingAmount(item)).toLocaleString()}` : '-' }}</div>
               </v-col>
             </v-row>
           </v-card-text>
