@@ -228,58 +228,69 @@ function exportCsv() {
       </div>
     </div>
 
-    <!-- Summary Cards -->
-    <v-row class="mb-6">
-      <v-col cols="6" md="3">
-        <v-card class="h-100 rounded-xl" elevation="0" border color="success" variant="tonal">
-          <v-card-text>
-            <div class="text-caption font-weight-medium mb-1">収入合計</div>
-            <div class="text-h6 font-weight-bold">¥{{ totalIncome.toLocaleString() }}</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" md="3">
-        <v-card class="h-100 rounded-xl" elevation="0" border color="error" variant="tonal">
-          <v-card-text>
-            <div class="text-caption font-weight-medium mb-1">支出合計</div>
-            <div class="text-h6 font-weight-bold">¥{{ totalPayment.toLocaleString() }}</div>
-            <div class="text-caption text-medium-emphasis mt-1">支払済: ¥{{ paidPayment.toLocaleString() }}</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" md="3">
-        <v-card class="h-100 rounded-xl" elevation="0" border :color="currentBalance >= 0 ? 'indigo' : 'error'" variant="tonal">
-          <v-card-text>
-            <div class="text-caption font-weight-medium mb-1">現在残高</div>
-            <div class="text-h6 font-weight-bold">¥{{ currentBalance.toLocaleString() }}</div>
-            <div class="text-caption text-medium-emphasis mt-1">見込残高: ¥{{ expectedBalance.toLocaleString() }}</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" md="3">
-        <v-card class="h-100 rounded-xl" elevation="0" border color="warning" variant="tonal">
-          <v-card-text>
-            <div class="text-caption font-weight-medium mb-1">残りの支出</div>
-            <div class="text-h6 font-weight-bold">¥{{ remainingPayment.toLocaleString() }}</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Compact Summary Bar (Single Row) -->
+    <v-card class="mb-4 pa-3 rounded-xl border" elevation="0">
+      <div class="d-flex align-center justify-space-between text-center gap-1">
+        <!-- 収入合計 -->
+        <div class="flex-grow-1 px-1">
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">収入合計</div>
+          <div class="text-subtitle-2 font-weight-bold text-success text-truncate">
+            ¥{{ totalIncome.toLocaleString() }}
+          </div>
+        </div>
 
-    <!-- Balance Progress -->
-    <v-card class="mb-8 pa-4 rounded-xl" elevation="0" border>
-      <div class="d-flex justify-space-between text-caption font-weight-medium mb-2">
-        <span>支出割合</span>
-        <span :class="balanceProgress > 90 ? 'text-error' : 'text-medium-emphasis'">
-          {{ balanceProgress.toFixed(1) }}%
-        </span>
+        <v-divider vertical class="align-self-stretch my-1"></v-divider>
+
+        <!-- 支出合計 -->
+        <div class="flex-grow-1 px-1">
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">支出合計</div>
+          <div class="text-subtitle-2 font-weight-bold text-error text-truncate">
+            ¥{{ totalPayment.toLocaleString() }}
+          </div>
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px; line-height: 1.1;">
+            済: ¥{{ paidPayment.toLocaleString() }}
+          </div>
+        </div>
+
+        <v-divider vertical class="align-self-stretch my-1"></v-divider>
+
+        <!-- 現在残高 -->
+        <div class="flex-grow-1 px-1">
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">現在残高</div>
+          <div :class="currentBalance >= 0 ? 'text-primary' : 'text-error'" class="text-subtitle-2 font-weight-bold text-truncate">
+            ¥{{ currentBalance.toLocaleString() }}
+          </div>
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px; line-height: 1.1;">
+            見込: ¥{{ expectedBalance.toLocaleString() }}
+          </div>
+        </div>
+
+        <v-divider vertical class="align-self-stretch my-1"></v-divider>
+
+        <!-- 残りの支出 -->
+        <div class="flex-grow-1 px-1">
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">残りの支出</div>
+          <div class="text-subtitle-2 font-weight-bold text-warning text-truncate">
+            ¥{{ remainingPayment.toLocaleString() }}
+          </div>
+        </div>
       </div>
-      <v-progress-linear
-        :model-value="balanceProgress"
-        :color="balanceProgress > 90 ? 'error' : (balanceProgress > 70 ? 'warning' : 'primary')"
-        height="8"
-        rounded
-      ></v-progress-linear>
+
+      <!-- Slim Progress -->
+      <div class="mt-3 pt-2 border-t">
+        <div class="d-flex justify-space-between text-caption font-weight-medium mb-1" style="font-size: 11px;">
+          <span class="text-medium-emphasis">支出割合</span>
+          <span :class="balanceProgress > 90 ? 'text-error' : 'text-medium-emphasis'">
+            {{ balanceProgress.toFixed(1) }}%
+          </span>
+        </div>
+        <v-progress-linear
+          :model-value="balanceProgress"
+          :color="balanceProgress > 90 ? 'error' : (balanceProgress > 70 ? 'warning' : 'primary')"
+          height="5"
+          rounded
+        ></v-progress-linear>
+      </div>
     </v-card>
 
     <!-- Bulk Actions -->
