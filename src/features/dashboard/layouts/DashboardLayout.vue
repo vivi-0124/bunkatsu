@@ -36,14 +36,13 @@ const navItems = computed(() => {
 </script>
 
 <template>
-  <v-layout class="bg-background">
-    <!-- Desktop Navigation Drawer -->
-    <v-navigation-drawer
-      v-if="!mobile"
-      v-model="drawer"
-      border="none"
-      elevation="1"
-    >
+  <!-- Desktop Navigation Drawer -->
+  <v-navigation-drawer
+    v-if="!mobile"
+    v-model="drawer"
+    border="none"
+    elevation="1"
+  >
       <!-- Sidebar Header -->
       <div class="px-4 py-4 d-flex align-center">
         <div class="app-logo mr-3">
@@ -165,12 +164,11 @@ const navItems = computed(() => {
     </v-bottom-navigation>
 
     <!-- Main Content -->
-    <v-main>
+    <v-main class="bg-background">
       <div class="pa-4 pa-md-8 h-100">
         <RouterView />
       </div>
     </v-main>
-  </v-layout>
 </template>
 
 <style scoped>
