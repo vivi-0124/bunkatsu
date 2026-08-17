@@ -129,7 +129,9 @@ async function executeDelete(scope: 'this_month' | 'all_future' = 'this_month') 
 
 async function togglePaidStatus(item: any) {
   try {
-    await store.togglePaid(item.id, !item.isPaid)
+    const nextState = !item.isPaid
+    await store.togglePaid(item.id, nextState)
+    success(nextState ? `「${item.name}」を支払済みにしました` : `「${item.name}」の支払いを解除しました`)
   } catch (e) {
     error('更新に失敗しました')
     item.isPaid = !item.isPaid // revert local state on failure
@@ -145,11 +147,11 @@ async function handleGenerateRecurring() {
   }
 }
 
-async function handleBulkSetPaid() {
+async function handleBulkSetPaid(isPaid: boolean = true) {
   if (selectedPayments.value.length === 0) return
   try {
-    await store.bulkSetPaid(selectedPayments.value, true)
-    success('選択した項目を支払済みにしました')
+    await store.bulkSetPaid(selectedPayments.value, isPaid)
+    success(isPaid ? '選択した項目を支払済みにしました' : '選択した項目の支払いを解除しました')
     selectedPayments.value = []
   } catch (e) {
     error('更新に失敗しました')
@@ -277,14 +279,19 @@ function exportCsv() {
     </v-card>
 
     <!-- Bulk Actions -->
-    <div v-if="hasSelectedItems" class="d-flex align-center gap-2 mb-4 pa-3 bg-surface-variant rounded-lg">
-      <span class="text-body-2 font-weight-medium mr-4">
+    <div v-if="hasSelectedItems" class="d-flex align-center flex-wrap gap-2 mb-4 pa-3 bg-surface-variant rounded-lg">
+      <span class="text-body-2 font-weight-medium mr-2">
         {{ selectedPayments.length + selectedIncomes.length }} 件選択中
       </span>
-      <v-btn size="small" color="primary" variant="flat" @click="handleBulkSetPaid" v-if="selectedPayments.length > 0">
-        支払済みにする
-      </v-btn>
-      <v-btn size="small" color="error" variant="flat" @click="handleBulkDelete">
+      <template v-if="selectedPayments.length > 0">
+        <v-btn size="small" color="primary" variant="flat" prepend-icon="mdi-check-circle" @click="handleBulkSetPaid(true)">
+          支払済みにする
+        </v-btn>
+        <v-btn size="small" color="warning" variant="tonal" prepend-icon="mdi-close-circle-outline" @click="handleBulkSetPaid(false)">
+          支払い解除
+        </v-btn>
+      </template>
+      <v-btn size="small" color="error" variant="flat" prepend-icon="mdi-delete" @click="handleBulkDelete">
         一括削除
       </v-btn>
       <v-spacer></v-spacer>
@@ -337,6 +344,9 @@ function exportCsv() {
                 @click.stop="togglePaidStatus(item)"
               >
                 <v-icon>{{ item.isPaid ? 'mdi-check-circle' : 'mdi-check-circle-outline' }}</v-icon>
+                <v-tooltip activator="parent" location="top">
+                  {{ item.isPaid ? '支払いを解除（未払いに戻す）' : '支払済みにする' }}
+                </v-tooltip>
               </v-btn>
             </template>
           </v-data-table>

@@ -3,6 +3,17 @@ import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
 
 export default createVuetify({
+  defaults: {
+    VDataTable: {
+      itemsPerPage: 50,
+    },
+    VDataTableServer: {
+      itemsPerPage: 50,
+    },
+    VDataTableVirtual: {
+      itemsPerPage: 50,
+    },
+  },
   theme: {
     defaultTheme: 'dark',
     themes: {
