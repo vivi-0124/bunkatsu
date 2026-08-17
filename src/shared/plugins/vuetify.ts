@@ -6,12 +6,15 @@ export default createVuetify({
   defaults: {
     VDataTable: {
       itemsPerPage: 50,
+      density: 'compact',
     },
     VDataTableServer: {
       itemsPerPage: 50,
+      density: 'compact',
     },
     VDataTableVirtual: {
       itemsPerPage: 50,
+      density: 'compact',
     },
   },
   theme: {

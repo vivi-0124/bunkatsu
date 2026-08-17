@@ -228,69 +228,57 @@ function exportCsv() {
       </div>
     </div>
 
-    <!-- Compact Summary Bar (Single Row) -->
-    <v-card class="mb-4 pa-3 rounded-xl border" elevation="0">
-      <div class="d-flex align-center justify-space-between text-center gap-1">
-        <!-- 収入合計 -->
-        <div class="flex-grow-1 px-1">
-          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">収入合計</div>
-          <div class="text-subtitle-2 font-weight-bold text-success text-truncate">
-            ¥{{ totalIncome.toLocaleString() }}
-          </div>
-        </div>
+    <!-- Summary Cards (2段・コンパクト) -->
+    <v-row dense class="mb-3">
+      <!-- 収入合計 -->
+      <v-col cols="6" md="3">
+        <v-card class="h-100 rounded-lg pa-2.5" elevation="0" border color="success" variant="tonal">
+          <div class="text-caption text-medium-emphasis" style="font-size: 11px;">収入合計</div>
+          <div class="text-subtitle-1 font-weight-bold text-truncate">¥{{ totalIncome.toLocaleString() }}</div>
+        </v-card>
+      </v-col>
 
-        <v-divider vertical class="align-self-stretch my-1"></v-divider>
+      <!-- 支出合計 -->
+      <v-col cols="6" md="3">
+        <v-card class="h-100 rounded-lg pa-2.5" elevation="0" border color="error" variant="tonal">
+          <div class="text-caption text-medium-emphasis" style="font-size: 11px;">支出合計</div>
+          <div class="text-subtitle-1 font-weight-bold text-truncate">¥{{ totalPayment.toLocaleString() }}</div>
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px; line-height: 1.1;">済: ¥{{ paidPayment.toLocaleString() }}</div>
+        </v-card>
+      </v-col>
 
-        <!-- 支出合計 -->
-        <div class="flex-grow-1 px-1">
-          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">支出合計</div>
-          <div class="text-subtitle-2 font-weight-bold text-error text-truncate">
-            ¥{{ totalPayment.toLocaleString() }}
-          </div>
-          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px; line-height: 1.1;">
-            済: ¥{{ paidPayment.toLocaleString() }}
-          </div>
-        </div>
+      <!-- 現在残高 -->
+      <v-col cols="6" md="3">
+        <v-card class="h-100 rounded-lg pa-2.5" elevation="0" border :color="currentBalance >= 0 ? 'indigo' : 'error'" variant="tonal">
+          <div class="text-caption text-medium-emphasis" style="font-size: 11px;">現在残高</div>
+          <div class="text-subtitle-1 font-weight-bold text-truncate">¥{{ currentBalance.toLocaleString() }}</div>
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px; line-height: 1.1;">見込: ¥{{ expectedBalance.toLocaleString() }}</div>
+        </v-card>
+      </v-col>
 
-        <v-divider vertical class="align-self-stretch my-1"></v-divider>
+      <!-- 残りの支出 -->
+      <v-col cols="6" md="3">
+        <v-card class="h-100 rounded-lg pa-2.5" elevation="0" border color="warning" variant="tonal">
+          <div class="text-caption text-medium-emphasis" style="font-size: 11px;">残りの支出</div>
+          <div class="text-subtitle-1 font-weight-bold text-truncate">¥{{ remainingPayment.toLocaleString() }}</div>
+        </v-card>
+      </v-col>
+    </v-row>
 
-        <!-- 現在残高 -->
-        <div class="flex-grow-1 px-1">
-          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">現在残高</div>
-          <div :class="currentBalance >= 0 ? 'text-primary' : 'text-error'" class="text-subtitle-2 font-weight-bold text-truncate">
-            ¥{{ currentBalance.toLocaleString() }}
-          </div>
-          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 10px; line-height: 1.1;">
-            見込: ¥{{ expectedBalance.toLocaleString() }}
-          </div>
-        </div>
-
-        <v-divider vertical class="align-self-stretch my-1"></v-divider>
-
-        <!-- 残りの支出 -->
-        <div class="flex-grow-1 px-1">
-          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px;">残りの支出</div>
-          <div class="text-subtitle-2 font-weight-bold text-warning text-truncate">
-            ¥{{ remainingPayment.toLocaleString() }}
-          </div>
-        </div>
+    <!-- Slim Progress -->
+    <v-card class="mb-4 pa-2.5 rounded-lg" elevation="0" border>
+      <div class="d-flex justify-space-between text-caption font-weight-medium mb-1" style="font-size: 11px;">
+        <span class="text-medium-emphasis">支出割合</span>
+        <span :class="balanceProgress > 90 ? 'text-error' : 'text-medium-emphasis'">
+          {{ balanceProgress.toFixed(1) }}%
+        </span>
       </div>
-
-      <!-- Slim Progress -->
-      <div class="mt-3 pt-2 border-t">
-        <div class="d-flex justify-space-between text-caption font-weight-medium mb-1" style="font-size: 11px;">
-          <span class="text-medium-emphasis">支出割合</span>
-          <span :class="balanceProgress > 90 ? 'text-error' : 'text-medium-emphasis'">
-            {{ balanceProgress.toFixed(1) }}%
-          </span>
-        </div>
-        <v-progress-linear
-          :model-value="balanceProgress"
-          :color="balanceProgress > 90 ? 'error' : (balanceProgress > 70 ? 'warning' : 'primary')"
-          height="5"
-          rounded
-        ></v-progress-linear>
-      </div>
+      <v-progress-linear
+        :model-value="balanceProgress"
+        :color="balanceProgress > 90 ? 'error' : (balanceProgress > 70 ? 'warning' : 'primary')"
+        height="5"
+        rounded
+      ></v-progress-linear>
     </v-card>
 
     <!-- Bulk Actions -->
@@ -316,12 +304,12 @@ function exportCsv() {
     </div>
 
     <!-- Data Tables -->
-    <v-row>
+    <v-row dense>
       <!-- Payments -->
       <v-col cols="12" md="6">
         <v-card class="rounded-xl border" elevation="0">
-          <v-card-title class="font-weight-bold pa-4 d-flex align-center">
-            <v-icon icon="mdi-minus-circle-outline" color="error" class="mr-2" />
+          <v-card-title class="font-weight-bold pa-3 d-flex align-center text-subtitle-1">
+            <v-icon icon="mdi-minus-circle-outline" color="error" class="mr-2" size="20" />
             支出 ({{ records.payments.length }})
           </v-card-title>
           <v-divider></v-divider>
@@ -330,19 +318,20 @@ function exportCsv() {
             :headers="paymentHeaders"
             :items="records.payments"
             :loading="loading"
+            density="compact"
             show-select
             item-value="id"
             hover
           >
             <template v-slot:item.name="{ item }">
-              <div class="d-flex align-center cursor-pointer" @click="openEditPayment(item)">
+              <div class="d-flex align-center cursor-pointer text-body-2" @click="openEditPayment(item)">
                 <span :class="{ 'text-medium-emphasis text-decoration-line-through': item.isPaid }">
                   {{ item.name }}
                 </span>
               </div>
             </template>
             <template v-slot:item.amount="{ item }">
-              <span class="font-mono cursor-pointer" :class="{ 'text-medium-emphasis': item.isPaid }" @click="openEditPayment(item)">
+              <span class="font-mono cursor-pointer text-body-2 font-weight-medium" :class="{ 'text-medium-emphasis': item.isPaid }" @click="openEditPayment(item)">
                 ¥{{ Number(item.amount || 0).toLocaleString() }}
               </span>
             </template>
@@ -353,12 +342,12 @@ function exportCsv() {
               <v-btn
                 icon
                 variant="text"
-                size="small"
-                class="ml-2"
+                size="x-small"
+                class="ml-1"
                 :color="item.isPaid ? 'success' : 'default'"
                 @click.stop="togglePaidStatus(item)"
               >
-                <v-icon>{{ item.isPaid ? 'mdi-check-circle' : 'mdi-check-circle-outline' }}</v-icon>
+                <v-icon size="18">{{ item.isPaid ? 'mdi-check-circle' : 'mdi-check-circle-outline' }}</v-icon>
                 <v-tooltip activator="parent" location="top">
                   {{ item.isPaid ? '支払いを解除（未払いに戻す）' : '支払済みにする' }}
                 </v-tooltip>
@@ -371,8 +360,8 @@ function exportCsv() {
       <!-- Incomes -->
       <v-col cols="12" md="6">
         <v-card class="rounded-xl border" elevation="0">
-          <v-card-title class="font-weight-bold pa-4 d-flex align-center">
-            <v-icon icon="mdi-plus-circle-outline" color="success" class="mr-2" />
+          <v-card-title class="font-weight-bold pa-3 d-flex align-center text-subtitle-1">
+            <v-icon icon="mdi-plus-circle-outline" color="success" class="mr-2" size="20" />
             収入 ({{ records.incomes.length }})
           </v-card-title>
           <v-divider></v-divider>
@@ -381,17 +370,18 @@ function exportCsv() {
             :headers="incomeHeaders"
             :items="records.incomes"
             :loading="loading"
+            density="compact"
             show-select
             item-value="id"
             hover
           >
             <template v-slot:item.name="{ item }">
-              <div class="d-flex align-center cursor-pointer" @click="openEditIncome(item)">
+              <div class="d-flex align-center cursor-pointer text-body-2" @click="openEditIncome(item)">
                 <span>{{ item.name }}</span>
               </div>
             </template>
             <template v-slot:item.amount="{ item }">
-              <span class="font-mono cursor-pointer" @click="openEditIncome(item)">
+              <span class="font-mono cursor-pointer text-body-2 font-weight-medium" @click="openEditIncome(item)">
                 ¥{{ Number(item.amount || 0).toLocaleString() }}
               </span>
             </template>
