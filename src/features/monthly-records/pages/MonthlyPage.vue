@@ -15,7 +15,10 @@ const {
   displayMonth,
   totalIncome,
   totalPayment,
+  paidPayment,
   remainingPayment,
+  currentBalance,
+  expectedBalance,
   balance,
   balanceProgress
 } = storeToRefs(store)
@@ -69,28 +72,27 @@ const incomeHeaders = [
 
 // Actions
 function openEditPayment(item: any) {
-  editPaymentForm.value = { ...item, amount: item.amount.toString() }
+  editPaymentForm.value = { ...item }
   editPaymentDialog.value = true
 }
 
 function openEditIncome(item: any) {
-  editIncomeForm.value = { ...item, amount: item.amount.toString() }
+  editIncomeForm.value = { ...item }
   editIncomeDialog.value = true
 }
 
-async function handleEditPaymentSubmit(scope: 'this_month' | 'all_future') {
+async function handleEditPaymentSubmit(scope: 'this_month' | 'all_future' = 'this_month') {
   try {
     const payload = {
       name: editPaymentForm.value.name,
       amount: Number(editPaymentForm.value.amount),
       paymentDate: editPaymentForm.value.paymentDate || null,
-      isPaid: editPaymentForm.value.isPaid,
+      isPaid: Boolean(editPaymentForm.value.isPaid),
       scope
     }
     await store.updatePayment(editPaymentForm.value.id, payload)
     success('更新しました')
     editPaymentDialog.value = false
-    saveTarget.value = null
   } catch (e) {
     error('更新に失敗しました')
   }
@@ -241,14 +243,16 @@ function exportCsv() {
           <v-card-text>
             <div class="text-caption font-weight-medium mb-1">支出合計</div>
             <div class="text-h6 font-weight-bold">¥{{ totalPayment.toLocaleString() }}</div>
+            <div class="text-caption text-medium-emphasis mt-1">支払済: ¥{{ paidPayment.toLocaleString() }}</div>
           </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="6" md="3">
-        <v-card class="h-100 rounded-xl" elevation="0" border :color="balance >= 0 ? 'indigo' : 'error'" variant="tonal">
+        <v-card class="h-100 rounded-xl" elevation="0" border :color="currentBalance >= 0 ? 'indigo' : 'error'" variant="tonal">
           <v-card-text>
-            <div class="text-caption font-weight-medium mb-1">残高</div>
-            <div class="text-h6 font-weight-bold">¥{{ balance.toLocaleString() }}</div>
+            <div class="text-caption font-weight-medium mb-1">現在残高</div>
+            <div class="text-h6 font-weight-bold">¥{{ currentBalance.toLocaleString() }}</div>
+            <div class="text-caption text-medium-emphasis mt-1">見込残高: ¥{{ expectedBalance.toLocaleString() }}</div>
           </v-card-text>
         </v-card>
       </v-col>

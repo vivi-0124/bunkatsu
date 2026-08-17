@@ -217,8 +217,11 @@ export const useMonthlyRecordsStore = defineStore('monthlyRecords', () => {
   
   const totalIncome = computed(() => records.value.incomes.reduce((sum: number, item: any) => sum + Number(item.amount), 0))
   const totalPayment = computed(() => records.value.payments.reduce((sum: number, item: any) => sum + Number(item.amount), 0))
+  const paidPayment = computed(() => records.value.payments.filter((p: any) => p.isPaid).reduce((sum: number, item: any) => sum + Number(item.amount), 0))
   const remainingPayment = computed(() => records.value.payments.filter((p: any) => !p.isPaid).reduce((sum: number, item: any) => sum + Number(item.amount), 0))
-  const balance = computed(() => totalIncome.value - totalPayment.value)
+  const currentBalance = computed(() => totalIncome.value - paidPayment.value)
+  const expectedBalance = computed(() => totalIncome.value - totalPayment.value)
+  const balance = computed(() => currentBalance.value)
   const balanceProgress = computed(() => {
     if (totalIncome.value === 0) return 100
     return Math.min((totalPayment.value / totalIncome.value) * 100, 100)
@@ -231,7 +234,10 @@ export const useMonthlyRecordsStore = defineStore('monthlyRecords', () => {
     displayMonth,
     totalIncome,
     totalPayment,
+    paidPayment,
     remainingPayment,
+    currentBalance,
+    expectedBalance,
     balance,
     balanceProgress,
     initMonth,
